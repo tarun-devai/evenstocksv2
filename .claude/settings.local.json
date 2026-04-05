@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scrape_stock_data.py --threads 1)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"from app.api.stock_chat import router; from app.stock_db import get_conn, search_stocks; print\\('Imports OK'\\)\")",
+      "Bash(python -c \"from app.api.stock_chat import router; from app.stock_db import get_conn, search_stocks, build_stock_context; print\\('All imports OK'\\); conn = get_conn\\(\\); print\\('DB:', 'found' if conn else 'not found'\\); results = search_stocks\\(conn, 'Tata'\\) if conn else []; print\\('Search Tata:', len\\(results\\), 'results'\\); [print\\(' ', r['stock_name'], r.get\\('market_cap',''\\)\\) for r in results[:5]]\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"from app.api.chat import router; print\\('OK'\\)\")",
+      "Bash(ls -d \"c:/Users/Tarun/OneDrive/Desktop/evenstocksv2/Logos\"*)",
+      "Bash(ls -d \"c:/Users/Tarun/OneDrive/Desktop/evenstocksv2/logos\"*)"
+    ]
+  }
+}

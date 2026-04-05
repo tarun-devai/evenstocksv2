@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.chat import router as chat_router
+from app.api.stock_chat import router as stock_chat_router
 from app.api.health import router as health_router
 from app.config import HOST, PORT
 
@@ -34,12 +35,18 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 # Register API routers
 app.include_router(chat_router)
+app.include_router(stock_chat_router)
 app.include_router(health_router)
 
 
 @app.get("/")
 async def serve_ui():
     return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/stocks")
+async def serve_stock_ui():
+    return FileResponse(FRONTEND_DIR / "stock.html")
 
 
 if __name__ == "__main__":
