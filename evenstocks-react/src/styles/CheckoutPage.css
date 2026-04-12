@@ -1,0 +1,124 @@
+.checkout-body {
+  padding: 40px;
+  background-color: #fff;
+  color: #333;
+}
+
+.checkout-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.shoppingCart, .orderSummary {
+  background-color: white;
+  padding: 30px;
+  border-radius: 1px;
+}
+
+.shoppingCart {
+  width: 73%;
+}
+
+.shoppingCart h1 {
+  font-family: 'Georgia', serif;
+  font-size: 22px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+}
+
+.orderSummary {
+  width: 25%;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: right;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.checkout-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+}
+
+.checkout-table th, .checkout-table td {
+  gap: 10px;
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle;
+}
+
+.checkout-table th {
+  text-transform: capitalize;
+  font-size: 14px;
+}
+
+.imageTitle {
+  display: flex;
+  align-items: center;
+}
+
+.imageTitle img {
+  width: 80px;
+  vertical-align: middle;
+  margin-right: 15px;
+}
+
+.price, .subtotal {
+  text-align: right;
+}
+
+.orderSummary h2 {
+  font-size: 18px;
+  font-weight: bold;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  text-align: justify;
+}
+
+.orderSummary p {
+  display: flex;
+  justify-content: space-between;
+}
+
+.totalPrice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.total {
+  padding: 15px 0;
+  border-top: 1px solid #ddd;
+}
+
+.proceed_section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.orderSummary button {
+  width: 100%;
+  background-color: #000000;
+  color: #fff;
+  font-size: 14px;
+  padding: 15px 0;
+  border: none;
+  border-radius: 1px;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 650px) {
+  .checkout-body { padding: 20px; }
+  .checkout-container { flex-direction: column; gap: 10px; }
+  .shoppingCart, .orderSummary { width: 100%; padding: 15px; }
+  .subtotal { display: none; }
+  .imageTitle img { width: 80px; margin-right: 0; }
+}

@@ -1,0 +1,8 @@
+flask
+flask-cors
+waitress
+mysql-connector-python
+bcrypt
+pytz
+requests
+python-dotenv
