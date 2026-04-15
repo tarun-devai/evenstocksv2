@@ -47,8 +47,94 @@
   display: block;
 }
 
+/* ── Mobile nav overrides ── */
+/* Keep toggle in-place (override main4.css absolute positioning) */
+.mobile-nav-active .mobile-nav-toggle {
+  position: static !important;
+  color: var(--nav-color, #212529) !important;
+  font-size: 28px !important;
+}
+
+/* Override the fullscreen dark overlay — make it transparent so only the card shows */
+@media (max-width: 1199px) {
+  .mobile-nav-active .navmenu {
+    background: transparent !important;
+    pointer-events: none;
+  }
+
+  /* Compact card dropdown instead of fullscreen white box */
+  .mobile-nav-active .navmenu > ul {
+    display: block !important;
+    position: fixed !important;
+    inset: auto !important;
+    top: 64px !important;
+    right: 16px !important;
+    left: auto !important;
+    width: 200px !important;
+    padding: 8px 0 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(2, 99, 77, 0.06) !important;
+    pointer-events: all;
+    animation: navSlideIn 0.2s ease-out;
+  }
+
+  .mobile-nav-active .navmenu > ul li {
+    border-bottom: 1px solid #f2f5f3;
+  }
+
+  .mobile-nav-active .navmenu > ul li:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-nav-active .navmenu > ul a,
+  .mobile-nav-active .navmenu > ul a:focus {
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    color: #2d465e !important;
+    transition: background 0.15s, color 0.15s !important;
+  }
+
+  .mobile-nav-active .navmenu > ul a:hover {
+    background: rgba(2, 99, 77, 0.06) !important;
+    color: #02634D !important;
+  }
+
+  .mobile-nav-active .navmenu > ul .active {
+    color: #02634D !important;
+    font-weight: 600 !important;
+    background: rgba(2, 99, 77, 0.04) !important;
+  }
+}
+
+@keyframes navSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Remove body scroll-lock since it's now a small dropdown */
+.mobile-nav-active {
+  overflow: auto !important;
+}
+
 @media (max-width: 768px) {
-  .header .logo .logo-img { max-height: 44px; }
+  .header .logo .logo-img { max-height: 38px; }
+}
+
+@media (max-width: 480px) {
+  .header .logo .logo-img { max-height: 32px; }
+
+  .header .btn-getstarted {
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+  }
 }
 
 @media screen and (max-width: 1024px) {

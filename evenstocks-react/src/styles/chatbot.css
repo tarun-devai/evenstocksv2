@@ -670,6 +670,53 @@
 .chatbot-page ::-webkit-scrollbar-thumb { background: rgba(2,99,77,0.15); border-radius: 3px; }
 .chatbot-page ::-webkit-scrollbar-thumb:hover { background: rgba(2,99,77,0.3); }
 
+/* ── Reaction buttons ──────────────────────────── */
+.chatbot-page .msg-action-btn.reacted {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* ── Follow-up suggestion bar ──────────────────── */
+.chatbot-page .follow-up-bar {
+  padding: 6px 20px 2px;
+  background: var(--bg);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.chatbot-page .follow-up-inner {
+  display: flex;
+  gap: 6px;
+  max-width: 820px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.chatbot-page .follow-up-chip {
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chatbot-page .follow-up-chip:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2,99,77,0.15);
+}
+
+.chatbot-page .follow-up-chip:active {
+  transform: translateY(0) scale(0.97);
+}
+
 /* ── Responsive ─────────────────────────────────── */
 @media (max-width: 640px) {
   .chatbot-page .header { padding: 8px 14px; }

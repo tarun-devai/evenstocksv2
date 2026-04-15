@@ -1,0 +1,9 @@
+
+
+conda activate evenstocks && cd evenstocks-api && python app.py
+
+conda activate evenstocks && cd evenstocks_chatbot && uvicorn main:app --reload --port 8000
+
+cd evenstocks-backend && node server.js
+
+cd evenstocks-react && npm start

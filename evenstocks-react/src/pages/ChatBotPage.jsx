@@ -30,6 +30,21 @@ function renderMarkdown(text) {
   return h;
 }
 
+const FOLLOW_UP_SUGGESTIONS = {
+  analysis: [
+    'What are the key risks?',
+    'Compare with sector peers',
+    'Is this good for long term?',
+    'What about recent quarterly results?',
+  ],
+  general: [
+    'Show me top gainers today',
+    'Which sectors are performing well?',
+    'Suggest stocks under 500',
+    'What are safe dividend stocks?',
+  ],
+};
+
 const ChatBotPage = () => {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
@@ -44,6 +59,7 @@ const ChatBotPage = () => {
   const [showAc, setShowAc] = useState(false);
   const [toast, setToast] = useState('');
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [reactions, setReactions] = useState({});
 
   const wsRef = useRef(null);
   const msgBoxRef = useRef(null);
@@ -293,6 +309,61 @@ const ChatBotPage = () => {
     navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
   };
 
+  // Reactions
+  const toggleReaction = (msgIndex, type) => {
+    setReactions((prev) => {
+      const key = `${msgIndex}-${type}`;
+      const current = prev[msgIndex];
+      if (current === type) {
+        const next = { ...prev };
+        delete next[msgIndex];
+        return next;
+      }
+      return { ...prev, [msgIndex]: type };
+    });
+    showToast(type === 'up' ? 'Marked as helpful' : 'Thanks for feedback');
+  };
+
+  // Export chat
+  const exportChat = () => {
+    if (messages.length === 0) {
+      showToast('No messages to export');
+      return;
+    }
+    const text = messages
+      .map((m) => `${m.role === 'user' ? 'You' : 'EvenStocks AI'}:\n${m.content}\n`)
+      .join('\n---\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evenstocks-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Chat exported');
+  };
+
+  // Insert follow-up suggestion
+  const sendSuggestion = (text) => {
+    if (streaming) return;
+    setInput('');
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    if (wsRef.current && wsRef.current.readyState === 1) {
+      wsRef.current.send(
+        JSON.stringify({ action: 'message', content: text, stocks: selectedStocks.map((s) => s.stock_name) })
+      );
+    }
+  };
+
+  // Determine which follow-up chips to show
+  const getFollowUpSuggestions = () => {
+    if (messages.length === 0 || streaming) return [];
+    const last = messages[messages.length - 1];
+    if (last.role !== 'assistant' || last.streaming) return [];
+    const hasStockContext = messages.some((m) => m.role === 'user' && m.stocks && m.stocks.length > 0);
+    return hasStockContext ? FOLLOW_UP_SUGGESTIONS.analysis : FOLLOW_UP_SUGGESTIONS.general;
+  };
+
   return (
     <div className="chatbot-page">
       {/* Header */}
@@ -307,6 +378,14 @@ const ChatBotPage = () => {
           </div>
         </div>
         <div className="header-actions">
+          <button className="btn-clear" onClick={exportChat} title="Export chat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{verticalAlign: 'middle', marginRight: '4px'}}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export
+          </button>
           <button className="btn-clear" onClick={clearChat}>
             New Chat
           </button>
@@ -383,6 +462,24 @@ const ChatBotPage = () => {
                     </svg>
                     Copy
                   </button>
+                  <button
+                    className={`msg-action-btn${reactions[i] === 'up' ? ' reacted' : ''}`}
+                    onClick={() => toggleReaction(i, 'up')}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill={reactions[i] === 'up' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                      <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/>
+                      <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+                    </svg>
+                  </button>
+                  <button
+                    className={`msg-action-btn${reactions[i] === 'down' ? ' reacted' : ''}`}
+                    onClick={() => toggleReaction(i, 'down')}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill={reactions[i] === 'down' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                      <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/>
+                      <path d="M17 2h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/>
+                    </svg>
+                  </button>
                 </div>
               )}
               {msg.usage && (
@@ -394,6 +491,19 @@ const ChatBotPage = () => {
           </div>
         ))}
       </div>
+
+      {/* Follow-up suggestions */}
+      {getFollowUpSuggestions().length > 0 && (
+        <div className="follow-up-bar">
+          <div className="follow-up-inner">
+            {getFollowUpSuggestions().map((s, i) => (
+              <button key={i} className="follow-up-chip" onClick={() => sendSuggestion(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Scroll to bottom button */}
       <button

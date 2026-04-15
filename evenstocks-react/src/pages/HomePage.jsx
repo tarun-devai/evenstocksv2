@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EntryModal from '../components/EntryModal';
 import LoginPopup from '../components/LoginPopup';
+import FloatingChat from '../components/FloatingChat';
 import PureCounter from '@srexi/purecounterjs';
 import '../styles/HomePage.css';
 
@@ -584,6 +585,7 @@ const HomePage = () => {
       </main>
 
       <Footer />
+      <FloatingChat />
     </>
   );
 };
