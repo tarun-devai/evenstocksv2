@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { submitContact, createOrder } from '../services/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -19,6 +20,7 @@ const typewriterPhrases = [
 
 const HomePage = () => {
   const { isLoggedIn, user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [showEntryModal, setShowEntryModal] = useState(false);
@@ -187,8 +189,17 @@ const HomePage = () => {
   const [openFaq, setOpenFaq] = useState(-1);
 
   return (
-    <>
-      <Header />
+    <div className={`dashboard-page${isDark ? ' dashboard-dark' : ''}`}>
+      <Header isDark={isDark} />
+
+      {/* Dark mode toggle — bottom-left to avoid conflicting with FloatingChat FAB */}
+      <button
+        className="home-dark-toggle"
+        onClick={toggleTheme}
+        title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      >
+        {isDark ? '☀️' : '🌙'}
+      </button>
 
       <EntryModal show={showEntryModal} onClose={() => setShowEntryModal(false)} />
       <LoginPopup show={showLoginPopup} onClose={() => setShowLoginPopup(false)} />
@@ -216,8 +227,7 @@ const HomePage = () => {
                     <span className="typewriter-cursor">|</span>
                   </h1>
                   <p className="mb-4 mb-md-5">
-                    Looking to take your investments to the next level? Evenstocks AI has your back.
-                    This game-changing platform uses real-time market insights and powerful AI tools to deliver smarter, faster stock recommendations.
+                    Navigate India's markets with confidence. EvenStocks AI combines real-time fundamentals, technical signals, and news sentiment across 5,300+ NSE &amp; BSE stocks — delivering clear, actionable insights so you spend less time researching and more time investing.
                   </p>
                   <div className="hero-buttons">
                     <button className="btn btn-primary me-0 me-sm-2 mx-1" onClick={handleGetStarted}>Get Started</button>
@@ -254,9 +264,9 @@ const HomePage = () => {
               <div className="col-xl-5" data-aos="fade-up" data-aos-delay="200">
                 <span className="about-meta">MORE ABOUT US</span>
                 <h2 className="about-title" style={{ textAlign: 'left' }}>Empowering Investors with AI</h2>
-                <p className="about-description">Welcome to EvenStocks! We're a team of finance fans and AI enthusiasts on a mission to transform the stock market for everyone.</p>
-                <p className="about-description">Wondering if you should buy Bharti Airtel Ltd? Just ask! Our advanced EvenStocks AI Algorithm instantly analyzes fundamentals, technicals, reports, charts, and the latest news.</p>
-                <p className="about-description">We built EvenStocks to simplify investing for both newcomers and pros alike. Ready for the new era in finance? Join us at EvenStocks.</p>
+                <p className="about-description">At EvenStocks, we believe every investor — from first-time buyers to seasoned traders — deserves professional-grade market intelligence. We've built an AI-powered platform that levels the playing field.</p>
+                <p className="about-description">Wondering whether to buy Bharti Airtel? Just ask. Our engine instantly cross-references fundamentals, technical indicators, quarterly earnings, charts, and breaking news to give you a clear, data-backed answer in seconds.</p>
+                <p className="about-description">No jargon. No information overload. Just the insights that matter, when you need them. Welcome to the smarter way to invest in India.</p>
               </div>
               <div className="col-xl-6" data-aos="fade-up" data-aos-delay="300">
                 <div className="image-wrapper">
@@ -273,7 +283,7 @@ const HomePage = () => {
         <div className="my-ul-timeline">
           <div className="container section-title" data-aos="fade-up">
             <h2>How it Works?</h2>
-            <p>That's the seamless process happening behind the scenes&mdash;so you can invest smarter, quicker, and with total peace of mind.</p>
+            <p>Here's the intelligence pipeline working behind the scenes every time you ask a question &mdash; so you get precise answers, not guesses.</p>
           </div>
           <ul className="timeline-container" ref={timelineRef}>
             <li className="timeline-item" style={{ '--accent-color': '#41516C' }}>
@@ -295,77 +305,14 @@ const HomePage = () => {
           </ul>
         </div>
 
-        {/* Ask Iris Section */}
-        <section id="ask-iris" className="ask-iris section">
-          <div className="container" data-aos="fade-up" data-aos-delay="100">
-            <div className="row align-items-center">
-              <div className="col-lg-6" data-aos="fade-right" data-aos-delay="200">
-                <div className="iris-content">
-                  <span className="iris-badge">Meet Iris</span>
-                  <h2>Your Personal Stock Analyst</h2>
-                  <p className="iris-description">
-                    Iris is our advanced AI analyst that goes beyond simple recommendations. Ask Iris anything about stocks, markets, or your portfolio, and get comprehensive analysis powered by real-time data and AI insights.
-                  </p>
-                  <div className="iris-features">
-                    <div className="iris-feature">
-                      <i className="bi bi-search"></i>
-                      <span>Market Explorer - Search & analyze thousands of stocks</span>
-                    </div>
-                    <div className="iris-feature">
-                      <i className="bi bi-graph-up"></i>
-                      <span>Market Pulse - Real-time market updates and news</span>
-                    </div>
-                    <div className="iris-feature">
-                      <i className="bi bi-microscope"></i>
-                      <span>Deep Dive - In-depth analysis of sectors and earnings</span>
-                    </div>
-                    <div className="iris-feature">
-                      <i className="bi bi-briefcase"></i>
-                      <span>Investor's Suite - Personal portfolio tools and insights</span>
-                    </div>
-                  </div>
-                  <Link to="/iris" className="btn btn-iris">
-                    Talk to Iris <i className="bi bi-arrow-right"></i>
-                  </Link>
-                </div>
-              </div>
-              <div className="col-lg-6" data-aos="fade-left" data-aos-delay="200">
-                <div className="iris-visual">
-                  <div className="iris-card">
-                    <div className="iris-card-header">
-                      <span className="iris-icon">✨</span>
-                      <h4>Ask Iris</h4>
-                    </div>
-                    <div className="iris-card-body">
-                      <div className="iris-example">
-                        <p className="iris-q">Should I buy TCS now?</p>
-                        <p className="iris-a">Based on the latest fundamentals and technical analysis, TCS shows strong performance with a P/E of 24.5...</p>
-                      </div>
-                      <div className="iris-features-quick">
-                        <span className="iris-tag">📊 Market Pulse</span>
-                        <span className="iris-tag">🔍 Market Explorer</span>
-                        <span className="iris-tag">🔬 Deep Dive</span>
-                        <span className="iris-tag">💼 Investor's Suite</span>
-                      </div>
-                    </div>
-                    <div className="iris-card-footer">
-                      <input type="text" placeholder="Ask Iris anything..." className="iris-input-demo" disabled />
-                      <button className="iris-send-demo" disabled>➤</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Call to Action */}
         <section id="call-to-action" className="call-to-action section">
           <div className="container" data-aos="fade-up" data-aos-delay="100">
             <div className="row content justify-content-center align-items-center position-relative">
               <div className="col-lg-8 mx-auto text-center">
-                <h2 className="display-4 mb-4">EvenStocks Bot AI Optimizes Market Timing</h2>
-                <p className="mb-4">Leverage AI-powered insights to make informed trading decisions at the right moment.</p>
+                <h2 className="display-4 mb-4">The Right Call, at the Right Time</h2>
+                <p className="mb-4">Stop second-guessing every trade. EvenStocks AI synthesizes thousands of data points in real time so your next move is always informed, never impulsive.</p>
                 <Link to="/chatbot" className="btn btn-cta">Chat with Bot</Link>
               </div>
             </div>
@@ -576,8 +523,8 @@ const HomePage = () => {
             <div className="row justify-content-center" data-aos="zoom-in" data-aos-delay="100">
               <div className="col-xl-10">
                 <div className="text-center">
-                  <h3>READY TO INVEST SMARTER?</h3>
-                  <p>Join thousands of traders and investors who use EvenStocks AI for reliable, real-time market insights.</p>
+                  <h3>READY TO INVEST WITH CONVICTION?</h3>
+                  <p>Join thousands of Indian investors who trust EvenStocks AI for real-time analysis, data-driven signals, and clarity on every trade.</p>
                   <Link className="cta-btn" to="/signup">Sign Up</Link>
                 </div>
               </div>
@@ -650,7 +597,7 @@ const HomePage = () => {
 
       <Footer />
       <FloatingChat />
-    </>
+    </div>
   );
 };
 

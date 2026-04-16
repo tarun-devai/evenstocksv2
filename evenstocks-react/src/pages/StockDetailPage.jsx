@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import '../styles/StockDetail.css';
 
 const API_BASE = 'http://localhost:8000';
@@ -7,19 +8,23 @@ const API_BASE = 'http://localhost:8000';
 const StockDetailPage = () => {
   const { stockName } = useParams();
   const navigate = useNavigate();
+  const { isDark: isDarkTheme, toggleTheme } = useTheme();
 
   const [stockInfo, setStockInfo] = useState(null);
   const [tables, setTables] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [activeFinancialTab, setActiveFinancialTab] = useState('quarters');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMentionResults, setChatMentionResults] = useState([]);
+  const [showChatMention, setShowChatMention] = useState(false);
 
-  const wsRef = React.useRef(null);
+  const wsRef = useRef(null);
+  const chatbarMentionActiveRef = useRef(false);
 
   const displayName = stockName.replace(/_/g, ' ');
 
@@ -56,7 +61,12 @@ const StockDetailPage = () => {
             name: r.stock_name.replace(/_/g, ' '),
             price: r.current_price || '',
           }));
-          setSearchResults(results);
+          if (chatbarMentionActiveRef.current) {
+            setChatMentionResults(results);
+            setShowChatMention(results.length > 0);
+          } else {
+            setSearchResults(results);
+          }
         }
       };
       ws.onclose = () => { wsRef.current = null; setTimeout(connectWs, 3000); };
@@ -219,7 +229,7 @@ const StockDetailPage = () => {
           <button className="sd-nav-btn">Pricing</button>
         </nav>
         <div className="sd-topbar-right">
-          <button className="sd-theme-btn" onClick={() => setIsDarkTheme(!isDarkTheme)}>
+          <button className="sd-theme-btn" onClick={toggleTheme}>
             {isDarkTheme ? '\u2600\uFE0F' : '\uD83C\uDF19'}
           </button>
           <button className="sd-user-btn">U</button>
@@ -494,14 +504,87 @@ const StockDetailPage = () => {
         </div>
       </main>
 
-      {/* Floating Chatbot Button - navigates to chatbot page */}
-      <button
-        className="sd-chat-fab"
-        onClick={() => navigate('/')}
-        title="Ask EvenStocks AI"
-      >
-        {'\u2728'}
-      </button>
+      {/* Sticky bottom chatbot input bar */}
+      <div className="sd-chat-bar">
+        {/* @Mention popup above the bar */}
+        {showChatMention && chatMentionResults.length > 0 && (
+          <div className="sd-chat-mention-list">
+            {chatMentionResults.map((stock, idx) => (
+              <button
+                key={idx}
+                className="sd-chat-mention-item"
+                onMouseDown={e => {
+                  e.preventDefault();
+                  const lastAt = chatInput.lastIndexOf('@');
+                  const newInput = chatInput.substring(0, lastAt) + '@' + stock.symbol + ' ';
+                  setChatInput(newInput);
+                  setChatMentionResults([]);
+                  setShowChatMention(false);
+                  chatbarMentionActiveRef.current = false;
+                }}
+              >
+                <span className="sd-mention-symbol">{stock.symbol.replace(/_/g, ' ')}</span>
+                {stock.price && <span className="sd-mention-price">₹{stock.price}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="sd-chat-bar-inner">
+          <span className="sd-chat-bar-icon">✦</span>
+          <input
+            type="text"
+            className="sd-chat-bar-input"
+            placeholder={`Ask about ${displayName} or type @ to mention another stock...`}
+            value={chatInput}
+            onChange={e => {
+              const val = e.target.value;
+              setChatInput(val);
+              // @mention detection
+              const lastAt = val.lastIndexOf('@');
+              if (lastAt !== -1) {
+                const afterAt = val.substring(lastAt + 1);
+                if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+                  chatbarMentionActiveRef.current = true;
+                  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(JSON.stringify({ action: 'search', query: afterAt }));
+                  }
+                } else {
+                  chatbarMentionActiveRef.current = false;
+                  setShowChatMention(false);
+                }
+              } else {
+                chatbarMentionActiveRef.current = false;
+                setShowChatMention(false);
+              }
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Escape') { setShowChatMention(false); return; }
+              if (e.key === 'Enter' && chatInput.trim()) {
+                setShowChatMention(false);
+                chatbarMentionActiveRef.current = false;
+                // If user hasn't manually typed @stockName, prepend it
+                const msg = chatInput.trim();
+                const finalMsg = msg.startsWith('@') ? msg : `@${stockName} ${msg}`;
+                navigate('/', { state: { initialMessage: finalMsg } });
+              }
+            }}
+            onBlur={() => setTimeout(() => setShowChatMention(false), 150)}
+          />
+          <button
+            className="sd-chat-bar-send"
+            disabled={!chatInput.trim()}
+            onClick={() => {
+              if (chatInput.trim()) {
+                setShowChatMention(false);
+                chatbarMentionActiveRef.current = false;
+                const msg = chatInput.trim();
+                const finalMsg = msg.startsWith('@') ? msg : `@${stockName} ${msg}`;
+                navigate('/', { state: { initialMessage: finalMsg } });
+              }
+            }}
+          >➤</button>
+        </div>
+      </div>
     </div>
   );
 };

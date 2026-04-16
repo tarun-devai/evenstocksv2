@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import '../styles/Header.css';
 
 const Header = () => {
   const { isLoggedIn, logout } = useAuth();
+  const { isDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -45,7 +47,7 @@ const Header = () => {
   };
 
   return (
-    <header id="header" className={`header d-flex align-items-center fixed-top ${scrolled ? 'scrolled' : ''}`}>
+    <header id="header" className={`header d-flex align-items-center fixed-top ${scrolled ? 'scrolled' : ''} ${isDark ? 'header-dark' : ''}`}>
       <div className="header-container container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
         <Link to="/" className="logo">
           <img src="/assets/img/logo-horizontal.png" alt="Even Stocks" className="logo-img" />

@@ -620,3 +620,122 @@
     margin-top: 30px;
   }
 }
+
+/* ============= DARK MODE TOGGLE ============= */
+.home-dark-toggle {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 9990;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: #02634d;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-dark-toggle:hover { background: #014e3a; transform: scale(1.08); }
+
+/* ============= DASHBOARD DARK MODE ============= */
+.dashboard-dark { background: #0d0d0d; color: #e0e0e0; }
+
+/* Backgrounds */
+.dashboard-dark .main,
+.dashboard-dark .section,
+.dashboard-dark .hero.section,
+.dashboard-dark .about.section,
+.dashboard-dark .ask-iris,
+.dashboard-dark .features-2.section,
+.dashboard-dark .stats.section,
+.dashboard-dark .contact.section { background: #0d0d0d !important; }
+
+.dashboard-dark .light-background,
+.dashboard-dark .testimonials.section,
+.dashboard-dark .pricing.section,
+.dashboard-dark .faq.section,
+.dashboard-dark .dark-background { background: #141414 !important; }
+
+.dashboard-dark .my-ul-timeline { background: #0d0d0d; }
+
+/* Text */
+.dashboard-dark h1, .dashboard-dark h2, .dashboard-dark h3, .dashboard-dark h4,
+.dashboard-dark h5, .dashboard-dark h6, .dashboard-dark p,
+.dashboard-dark .about-title, .dashboard-dark .about-description,
+.dashboard-dark .iris-content h2, .dashboard-dark .iris-description,
+.dashboard-dark .faq-title, .dashboard-dark .faq-description,
+.dashboard-dark .section-title p, .dashboard-dark .info-item .content h4,
+.dashboard-dark .info-item .content p { color: #e0e0e0 !important; }
+
+.dashboard-dark .feature-content h3 { color: #fff !important; }
+.dashboard-dark .feature-content p { color: #aaa !important; }
+
+/* Cards & panels */
+.dashboard-dark .chat-window,
+.dashboard-dark .iris-card,
+.dashboard-dark .glass-modal,
+.dashboard-dark .pricing-card,
+.dashboard-dark .testimonial-item,
+.dashboard-dark .info-box,
+.dashboard-dark .contact-form,
+.dashboard-dark .faq-item { background: #1a1a1a !important; border-color: #2a2a2a !important; color: #e0e0e0 !important; }
+
+.dashboard-dark .chat-input,
+.dashboard-dark .iris-card-footer { background: #222 !important; border-top-color: #2a2a2a !important; }
+
+.dashboard-dark .chat-input input,
+.dashboard-dark .iris-input-demo { background: #2a2a2a !important; border-color: #333 !important; color: #e0e0e0 !important; }
+
+.dashboard-dark .chat-header { background: #1a2a1a !important; }
+
+/* Timeline */
+.dashboard-dark .my-ul-timeline .timeline-item { background: #1a1a1a !important; box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; }
+.dashboard-dark .my-ul-timeline .timeline-title { color: #e0e0e0 !important; }
+.dashboard-dark .my-ul-timeline .timeline-container::after { background: #333 !important; }
+
+/* FAQ */
+.dashboard-dark .faq-item h3 { color: #e0e0e0 !important; }
+.dashboard-dark .faq-item .faq-content p { color: #aaa !important; }
+.dashboard-dark .faq-item:hover { background: rgba(255,255,255,0.03) !important; }
+.dashboard-dark .faq-item.faq-active { background: #1f2f1f !important; }
+
+/* Forms */
+.dashboard-dark .form-control { background: #1a1a1a !important; border-color: #2a2a2a !important; color: #e0e0e0 !important; }
+.dashboard-dark .form-control::placeholder { color: #666 !important; }
+
+/* Pricing */
+.dashboard-dark .pricing-card.bg-light { background: #1a1a1a !important; }
+.dashboard-dark .pricing-card h3, .dashboard-dark .pricing-card h4 { color: #fff !important; }
+.dashboard-dark .pricing-card .description, .dashboard-dark .pricing-card .features-list li { color: #aaa !important; }
+.dashboard-dark .pricing-card .price .amount { color: #02634d !important; }
+
+/* Iris card internals */
+.dashboard-dark .iris-card-body { border-bottom-color: #2a2a2a !important; }
+.dashboard-dark .iris-q { color: #e0e0e0 !important; }
+.dashboard-dark .iris-a { color: #aaa !important; }
+.dashboard-dark .iris-tag { background: #2a2a2a !important; color: #aaa !important; }
+
+/* Testimonials */
+.dashboard-dark .testimonial-item h3 { color: #fff !important; }
+.dashboard-dark .testimonial-item p { color: #aaa !important; }
+
+/* Stats */
+.dashboard-dark .stats-item span, .dashboard-dark .stats-item p { color: #e0e0e0 !important; }
+
+/* Chat window in features section */
+.dashboard-dark .chat-window { background: #1a1a1a !important; border-color: #2a2a2a !important; }
+.dashboard-dark .chat-messages { background: #1a1a1a !important; }
+.dashboard-dark .bot-message .message { color: #ccc !important; }
+.dashboard-dark .user-message .message { background: #1a2a1a !important; color: #e0e0e0 !important; }
+.dashboard-dark .chat-input { background: #1a1a1a !important; border-top-color: #2a2a2a !important; }
+.dashboard-dark .chat-input input { background: #252525 !important; border-color: #333 !important; color: #e0e0e0 !important; }
+
+/* Info box items */
+.dashboard-dark .info-item { border-color: #2a2a2a !important; }
+.dashboard-dark .icon-box { background: #252525 !important; color: #02634d !important; }

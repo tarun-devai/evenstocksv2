@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/chatbot-final.css';
 
 const ChatBotPageFinal = () => {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
+  const { isDark: isDarkTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -15,7 +18,6 @@ const ChatBotPageFinal = () => {
   const [toast, setToast] = useState('');
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showMentionList, setShowMentionList] = useState(false);
@@ -26,6 +28,12 @@ const ChatBotPageFinal = () => {
   const [activeChatId, setActiveChatId] = useState(null);
   const [historyOpen, setHistoryOpen] = useState(true);
   const [historyMenuId, setHistoryMenuId] = useState(null);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const searchModalOpenRef = useRef(false);
+  const pendingMessageRef = useRef(null);
+  const isCancelledRef = useRef(false);
 
   const msgBoxRef = useRef(null);
   const thinkingTimerRef = useRef(null);
@@ -41,6 +49,30 @@ const ChatBotPageFinal = () => {
       ws.onopen = () => {
         console.log('Connected to EvenStocks AI');
         wsRef.current = ws;
+        // Auto-send pending message (from stock page redirect)
+        if (pendingMessageRef.current) {
+          const msg = pendingMessageRef.current;
+          pendingMessageRef.current = null;
+          setTimeout(() => {
+            setInput(msg);
+            setMessages([{ type: 'user', content: msg }]);
+            setThinking(true);
+            setStreamingContent('');
+            setThinkingTime(0);
+            let elapsed = 0;
+            thinkingTimerRef.current = setInterval(() => {
+              elapsed += 100;
+              setThinkingTime((elapsed / 1000).toFixed(2));
+            }, 100);
+            const mentionMatch = msg.match(/@([A-Za-z_][A-Za-z0-9_]*)/);
+            if (mentionMatch) {
+              ws.send(JSON.stringify({ action: 'analyze', stock_name: mentionMatch[1] }));
+            } else {
+              ws.send(JSON.stringify({ action: 'message', content: msg }));
+            }
+            setInput('');
+          }, 200);
+        }
       };
 
       ws.onmessage = (event) => {
@@ -55,7 +87,7 @@ const ChatBotPageFinal = () => {
             pe: r.stock_pe || '',
             market_cap: r.market_cap || '',
           }));
-          if (searchSourceRef.current === 'topbar') {
+          if (searchModalOpenRef.current) {
             setSearchResults(results);
           } else {
             setMentionResults(results);
@@ -64,15 +96,22 @@ const ChatBotPageFinal = () => {
         }
 
         if (data.type === 'stream_start') {
+          isCancelledRef.current = false; // reset on new stream
           setStreamingContent('');
           setThinking(true);
         }
 
         if (data.type === 'stream_delta') {
-          setStreamingContent((prev) => prev + data.content);
+          if (!isCancelledRef.current) {
+            setStreamingContent((prev) => prev + data.content);
+          }
         }
 
         if (data.type === 'stream_end') {
+          if (isCancelledRef.current) {
+            isCancelledRef.current = false; // reset for next use
+            return;
+          }
           clearInterval(thinkingTimerRef.current);
           setThinking(false);
           setStreamingContent((prev) => {
@@ -110,6 +149,18 @@ const ChatBotPageFinal = () => {
     connectWs();
     return () => { if (wsRef.current) wsRef.current.close(); };
   }, []);
+
+  // Sync searchModalOpen to ref for WS handler
+  useEffect(() => { searchModalOpenRef.current = searchModalOpen; }, [searchModalOpen]);
+
+  // Handle incoming message from stock page redirect
+  useEffect(() => {
+    const msg = location.state?.initialMessage;
+    if (msg) {
+      pendingMessageRef.current = msg;
+      window.history.replaceState({}, document.title); // clear state
+    }
+  }, [location.state]);
 
   // Load chat history from localStorage on mount
   useEffect(() => {
@@ -225,7 +276,7 @@ const ChatBotPageFinal = () => {
     { id: 'chat', icon: '📄', label: 'New Chat' },
     { id: 'search', icon: '🔍', label: 'Search Chat' },
     { id: 'starred', icon: '⭐', label: 'Starred Chat' },
-    { id: 'community', icon: '👥', label: 'Community Chat' },
+    { id: 'trending', icon: '🔥', label: 'Market Pulse' },
     { id: 'share', icon: '🔗', label: 'Shared Chats' },
   ];
 
@@ -386,7 +437,12 @@ const ChatBotPageFinal = () => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        document.querySelector('.topbar-search-final')?.focus();
+        setSearchModalOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setSearchModalOpen(false);
+        setSearchResults([]);
+        setSearchQuery('');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -399,7 +455,7 @@ const ChatBotPageFinal = () => {
       if (!e.target.closest('.mention-list-final') && !e.target.closest('.input-group-final')) {
         setShowMentionList(false);
       }
-      if (!e.target.closest('.search-results-final') && !e.target.closest('.search-container-final')) {
+      if (!e.target.closest('.search-results-final') && !e.target.closest('.search-container-final') && !e.target.closest('.search-modal-box-final')) {
         setSearchResults([]);
       }
       if (!e.target.closest('.toolkit-dropdown-final')) {
@@ -407,6 +463,9 @@ const ChatBotPageFinal = () => {
       }
       if (!e.target.closest('.chat-history-item-actions')) {
         setHistoryMenuId(null);
+      }
+      if (!e.target.closest('.settings-panel-final') && !e.target.closest('.settings-icon-btn')) {
+        setSettingsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -506,10 +565,22 @@ const ChatBotPageFinal = () => {
     showToast('New chat started');
   };
 
+  const cancelThinking = useCallback(() => {
+    isCancelledRef.current = true;
+    clearInterval(thinkingTimerRef.current);
+    setThinking(false);
+    if (streamingContent) {
+      setMessages(prev => [...prev, { type: 'bot', content: streamingContent }]);
+    }
+    setStreamingContent('');
+    // Do NOT close WS — keep connection alive so @mentions keep working
+    // Safety: if stream_end never arrives, re-enable after 3s
+    setTimeout(() => { isCancelledRef.current = false; }, 3000);
+  }, [streamingContent]);
+
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      searchSourceRef.current = 'topbar';
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ action: 'search', query }));
       }
@@ -523,10 +594,6 @@ const ChatBotPageFinal = () => {
     setSearchQuery('');
     // Navigate to stock detail page
     navigate(`/stock/${stock.symbol}`);
-  };
-
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
   };
 
   const handleMentionSelect = (stock) => {
@@ -585,7 +652,10 @@ const ChatBotPageFinal = () => {
       {/* Sidebar */}
       <aside className={`sidebar-final ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header-final">
-          <img src="/assets/img/logo-icon.png" alt="EvenStocks" className="sidebar-logo-final" />
+          <div className="sidebar-logo-wrap">
+            <img src="/assets/img/logo-icon.png" alt="ES" className="sidebar-logo-final" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+            <div className="sidebar-logo-fallback" style={{display:'none'}}>ES</div>
+          </div>
           {sidebarOpen && <span className="sidebar-brand-text">EvenStocks</span>}
           <button className="sidebar-toggle-final" onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
@@ -599,6 +669,10 @@ const ChatBotPageFinal = () => {
               className="sidebar-item-final"
               onClick={() => {
                 if (item.id === 'chat') handleNewChat();
+                if (item.id === 'search') {
+                  if (sidebarOpen) setChatSearchQuery(prev => prev === null ? '' : null);
+                  else setSidebarOpen(true);
+                }
                 if (item.id === 'starred') {
                   const starred = chatHistory.filter((h) => h.starred);
                   if (starred.length > 0) {
@@ -606,6 +680,12 @@ const ChatBotPageFinal = () => {
                   } else {
                     showToast('No starred chats yet');
                   }
+                }
+                if (item.id === 'trending') {
+                  handleToolkitAction('sectors');
+                }
+                if (item.id === 'share') {
+                  showToast('Shared chats coming soon');
                 }
               }}
               title={item.label}
@@ -615,6 +695,20 @@ const ChatBotPageFinal = () => {
             </button>
           ))}
         </nav>
+
+        {/* Chat search filter */}
+        {sidebarOpen && chatSearchQuery !== null && (
+          <div className="chat-search-filter">
+            <input
+              type="text"
+              placeholder="Search chats..."
+              value={chatSearchQuery}
+              onChange={e => setChatSearchQuery(e.target.value)}
+              className="chat-search-input"
+              autoFocus
+            />
+          </div>
+        )}
 
         {/* Chat History Section */}
         {sidebarOpen && (
@@ -629,11 +723,12 @@ const ChatBotPageFinal = () => {
                 {chatHistory.length === 0 ? (
                   <div className="chat-history-empty">No chat history yet</div>
                 ) : (
-                  Object.entries(groupedHistory()).map(([group, chats]) =>
-                    chats.length > 0 ? (
+                  Object.entries(groupedHistory()).map(([group, chats]) => {
+                    const filtered = chatSearchQuery ? chats.filter(c => c.title.toLowerCase().includes(chatSearchQuery.toLowerCase())) : chats;
+                    return filtered.length > 0 ? (
                       <div key={group} className="chat-history-group">
                         <div className="chat-history-group-label">{group}</div>
-                        {chats.map((chat) => (
+                        {filtered.map((chat) => (
                           <div
                             key={chat.id}
                             className={`chat-history-item ${activeChatId === chat.id ? 'active' : ''}`}
@@ -643,7 +738,7 @@ const ChatBotPageFinal = () => {
                               onClick={() => loadChat(chat)}
                               title={chat.title}
                             >
-                              {chat.starred && <span className="chat-star-icon">&#9733;</span>}
+                              {chat.starred && <span className="chat-star-icon">{'\u2605'}</span>}
                               <span className="chat-history-item-title">{chat.title}</span>
                             </button>
                             <div className="chat-history-item-actions">
@@ -654,15 +749,15 @@ const ChatBotPageFinal = () => {
                                   setHistoryMenuId(historyMenuId === chat.id ? null : chat.id);
                                 }}
                               >
-                                &#8942;
+                                {'\u22EE'}
                               </button>
                               {historyMenuId === chat.id && (
                                 <div className="chat-history-menu">
                                   <button onClick={() => toggleStarChat(chat.id)}>
-                                    {chat.starred ? '&#9734; Unstar' : '&#9733; Star'}
+                                    {chat.starred ? '\u2606 Unstar' : '\u2605 Star'}
                                   </button>
                                   <button onClick={() => deleteChat(chat.id)}>
-                                    &#128465; Delete
+                                    {'\uD83D\uDDD1'} Delete
                                   </button>
                                 </div>
                               )}
@@ -670,8 +765,8 @@ const ChatBotPageFinal = () => {
                           </div>
                         ))}
                       </div>
-                    ) : null
-                  )
+                    ) : null;
+                  })
                 )}
               </div>
             )}
@@ -679,8 +774,8 @@ const ChatBotPageFinal = () => {
         )}
 
         <div className="sidebar-footer-final">
-          <button className="settings-btn-final" title="Settings">
-            &#9881; {sidebarOpen && <span>Settings</span>}
+          <button className="settings-btn-final" title="Settings" onClick={() => navigate('/profile')}>
+            {'\u2699\uFE0F'} {sidebarOpen && <span>Settings</span>}
           </button>
         </div>
       </aside>
@@ -691,35 +786,71 @@ const ChatBotPageFinal = () => {
         <div className="topbar-final">
           <div className="topbar-content">
             <div className="topbar-left">
-              <div className="search-container-final">
-                <input
-                  type="text"
-                  className="topbar-search-final"
-                  placeholder="Search stocks, ETF, IPO..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-                {searchResults.length > 0 && (
-                  <div className="search-results-final">
-                    {searchResults.map((stock, idx) => (
-                      <button
-                        key={idx}
-                        className="search-result-item"
-                        onClick={() => handleStockSelect(stock)}
-                        title={`${stock.symbol} - ${stock.name}`}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div className="stock-symbol">{stock.symbol}</div>
-                          <div className="stock-name">{stock.name}</div>
-                        </div>
-                        <div className="stock-price">₹{stock.price}</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="search-trigger-final" onClick={() => setSearchModalOpen(true)}>
+                <span className="search-trigger-icon">🔍</span>
+                <span className="search-trigger-text">Search stocks, ETF, IPO...</span>
+                <span className="search-hint">Ctrl + K</span>
               </div>
-              <span className="search-hint">Ctrl + K</span>
             </div>
+
+            {/* Search Modal Overlay */}
+            {searchModalOpen && (
+              <div
+                className="search-modal-overlay-final"
+                onClick={() => { setSearchModalOpen(false); setSearchResults([]); setSearchQuery(''); }}
+              >
+                <div className="search-modal-box-final" onClick={e => e.stopPropagation()}>
+                  <div className="search-modal-header-final">
+                    <span className="search-modal-icon">🔍</span>
+                    <input
+                      autoFocus
+                      type="text"
+                      className="search-modal-input-final"
+                      placeholder="Search stocks, ETF, IPO..."
+                      value={searchQuery}
+                      onChange={e => handleSearch(e.target.value)}
+                    />
+                    <button
+                      className="search-modal-close-final"
+                      onClick={() => { setSearchModalOpen(false); setSearchResults([]); setSearchQuery(''); }}
+                    >✕</button>
+                  </div>
+                  <div className="search-modal-filters-final">
+                    <button className="search-filter-btn-final active">All</button>
+                    <button className="search-filter-btn-final">Stock</button>
+                    <button className="search-filter-btn-final">ETF</button>
+                    <button className="search-filter-btn-final">Indices</button>
+                    <button className="search-filter-btn-final">IPO</button>
+                    <button className="search-filter-btn-final">Page</button>
+                  </div>
+                  <div className="search-modal-results-final">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((stock, idx) => (
+                        <button
+                          key={idx}
+                          className="search-modal-result-row-final"
+                          onClick={() => { setSearchModalOpen(false); setSearchQuery(''); handleStockSelect(stock); }}
+                        >
+                          <div className="search-modal-result-icon-final">
+                            <span>{stock.symbol[0]}</span>
+                          </div>
+                          <div className="search-modal-result-info-final">
+                            <span className="search-modal-result-symbol-final">{stock.symbol.replace(/_/g, ' ').toUpperCase()}</span>
+                            <span className="search-modal-result-name-final">{stock.name}</span>
+                          </div>
+                          <span className="search-modal-result-tag-final">STOCK</span>
+                          <span className="search-modal-result-arrow-final">↗</span>
+                        </button>
+                      ))
+                    ) : searchQuery ? (
+                      <div className="search-modal-empty-final">No results found for "{searchQuery}"</div>
+                    ) : (
+                      <div className="search-modal-empty-final">Type to search stocks...</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <nav className="topbar-nav-final">
               <button className="nav-btn-final active">Ask EvenStocks</button>
@@ -756,13 +887,42 @@ const ChatBotPageFinal = () => {
               </div>
             </nav>
 
-            <div className="topbar-right">
+            <div className="topbar-right" style={{position:'relative'}}>
               <button className="theme-btn-final" onClick={toggleTheme} title="Toggle theme">
                 {isDarkTheme ? '☀️' : '🌙'}
               </button>
-              <button className="user-btn-final">
+              <button className="user-btn-final" onClick={() => navigate('/profile')} title="Profile">
                 {user?.username?.[0]?.toUpperCase() || 'U'}
               </button>
+              {/* Settings panel */}
+              {settingsOpen && (
+                <div className="settings-panel-final" onClick={e => e.stopPropagation()}>
+                  <div className="settings-panel-title">Settings</div>
+                  <div className="settings-row">
+                    <span>Theme</span>
+                    <button className="settings-toggle-btn" onClick={toggleTheme}>
+                      {isDarkTheme ? '☀️ Light' : '🌙 Dark'}
+                    </button>
+                  </div>
+                  <div className="settings-row">
+                    <span>Clear History</span>
+                    <button className="settings-danger-btn" onClick={() => {
+                      setChatHistory([]); localStorage.removeItem('evenstocks_chat_history');
+                      showToast('History cleared'); setSettingsOpen(false);
+                    }}>Clear</button>
+                  </div>
+                  <div className="settings-row">
+                    <span>Profile</span>
+                    <button className="settings-link-btn" onClick={() => { setSettingsOpen(false); navigate('/profile'); }}>View →</button>
+                  </div>
+                  {isLoggedIn && (
+                    <div className="settings-row">
+                      <span>Sign Out</span>
+                      <button className="settings-danger-btn" onClick={() => { logout(); navigate('/login'); }}>Sign Out</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -788,7 +948,7 @@ const ChatBotPageFinal = () => {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        handleSend();
+                        if (!thinking) handleSend();
                       }
                     }}
                     placeholder="Ask anything about stocks... (Type @ to mention a stock)"
@@ -796,10 +956,12 @@ const ChatBotPageFinal = () => {
                     rows="1"
                   />
                   <div className="input-actions">
-                    <button className="settings-icon-btn">⚙️</button>
-                    <button className="send-btn-final" onClick={handleSend}>
-                      ➤
-                    </button>
+                    <button className="settings-icon-btn" onClick={() => setSettingsOpen(!settingsOpen)} title="Settings">⚙️</button>
+                    {thinking || streamingContent ? (
+                      <button className="cancel-btn-final" onClick={cancelThinking} title="Stop response">■</button>
+                    ) : (
+                      <button className="send-btn-final" onClick={handleSend}>➤</button>
+                    )}
                   </div>
                 </div>
 
@@ -901,19 +1063,20 @@ const ChatBotPageFinal = () => {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        handleSend();
+                        if (!thinking) handleSend();
                       }
                     }}
                     placeholder="Ask EvenStocks anything about stocks... (Type @ to mention a stock)"
                     className="input-final"
                     rows="1"
-                    disabled={thinking}
                   />
                   <div className="input-actions">
-                    <button className="settings-icon-btn">⚙️</button>
-                    <button className="send-btn-final" onClick={handleSend} disabled={thinking}>
-                      {thinking ? '⏳' : '➤'}
-                    </button>
+                    <button className="settings-icon-btn" onClick={() => setSettingsOpen(!settingsOpen)} title="Settings">⚙️</button>
+                    {thinking || streamingContent ? (
+                      <button className="cancel-btn-final" onClick={cancelThinking} title="Stop response">■</button>
+                    ) : (
+                      <button className="send-btn-final" onClick={handleSend}>➤</button>
+                    )}
                   </div>
                 </div>
 

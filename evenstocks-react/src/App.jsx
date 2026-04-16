@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -16,6 +17,7 @@ import ChatBotPageEnhanced from './pages/ChatBotPageEnhanced';
 import ChatBotPageFinal from './pages/ChatBotPageFinal';
 import StockDetailPage from './pages/StockDetailPage';
 import IrisPage from './pages/IrisPage';
+import ProfilePage from './pages/ProfilePage';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -51,6 +53,7 @@ const AppRoutes = () => {
       <Route path="/chatbot" element={<ChatBotPageFinal />} />
       <Route path="/stock/:stockName" element={<StockDetailPage />} />
       <Route path="/iris" element={<IrisPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -58,11 +61,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

@@ -386,11 +386,28 @@
   padding: 0 32px 80px;
 }
 
+/* ============= CARD CONTAINER ============= */
+.sd-card {
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.sd-page.dark .sd-card {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+}
+
+.sd-page.light .sd-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
 /* ============= STOCK HEADER ============= */
 .sd-stock-header {
-  padding: 24px 0;
-  border-bottom: 1px solid;
-  margin-bottom: 24px;
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .sd-page.dark .sd-stock-header { border-color: #2a2a2a; }
@@ -1028,3 +1045,126 @@
   .sd-stock-title-row { flex-wrap: wrap; }
   .sd-watchlist-btn { margin-left: 0; width: 100%; text-align: center; }
 }
+
+/* ============= STICKY CHATBOT INPUT BAR ============= */
+.sd-chat-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  padding: 12px 24px 16px;
+}
+
+.sd-page.dark .sd-chat-bar {
+  background: linear-gradient(to top, #0f0f0f 70%, transparent);
+}
+
+.sd-page.light .sd-chat-bar {
+  background: linear-gradient(to top, #f8f9fa 70%, transparent);
+}
+
+.sd-chat-bar-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+
+.sd-page.dark .sd-chat-bar-inner {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.4);
+}
+
+.sd-page.light .sd-chat-bar-inner {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+}
+
+.sd-chat-bar-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sd-page.dark .sd-chat-bar-icon { color: #667eea; }
+.sd-page.light .sd-chat-bar-icon { color: #02634d; }
+
+.sd-chat-bar-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.sd-page.dark .sd-chat-bar-input { color: #fff; }
+.sd-page.light .sd-chat-bar-input { color: #1a1a1a; }
+.sd-chat-bar-input::placeholder { color: #666; }
+
+.sd-chat-bar-send {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.sd-page.dark .sd-chat-bar-send { background: #667eea; }
+.sd-page.light .sd-chat-bar-send { background: #02634d; }
+.sd-chat-bar-send:hover:not(:disabled) { transform: scale(1.08); }
+.sd-chat-bar-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Add bottom padding to main so content isn't hidden behind the bar */
+.sd-main { padding-bottom: 100px; }
+
+/* ============= CHATBAR @MENTION ============= */
+.sd-chat-mention-list {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  z-index: 200;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sd-page.dark .sd-chat-mention-list { background: #1e1e1e; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-chat-mention-list { background: #fff; border: 1px solid #e0e0e0; }
+
+.sd-chat-mention-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.sd-page.dark .sd-chat-mention-item:hover { background: #252525; }
+.sd-page.light .sd-chat-mention-item:hover { background: #f5f5f5; }
+
+.sd-mention-symbol { font-size: 13px; font-weight: 600; }
+.sd-page.dark .sd-mention-symbol { color: #e0e0e0; }
+.sd-page.light .sd-mention-symbol { color: #1a1a1a; }
+
+.sd-mention-price { font-size: 12px; color: #888; }
