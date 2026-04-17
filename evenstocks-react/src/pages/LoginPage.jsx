@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { checkUserEmail, loginUser, sendOtp, validateOtp, updatePassword } from '../services/api';
 import '../styles/LoginPage.css';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isDark } = useTheme();
 
   // Form states
   const [view, setView] = useState('login'); // login | forgot | otp | newPassword
@@ -164,7 +166,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="login-page-container">
+    <div className={`login-page-container${isDark ? ' login-dark' : ''}`}>
       <div className="container">
         {/* Left Section */}
         <div className="left-section">

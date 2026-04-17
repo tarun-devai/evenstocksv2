@@ -104,3 +104,46 @@
   .signup-page-container .input-group { max-width: 100%; }
   .signup-page-container .sign-up-btn { width: 100%; }
 }
+
+/* ============= DARK THEME ============= */
+.signup-page-container.signup-dark { background-color: #0d0d0d; }
+
+.signup-dark .container { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4); }
+
+.signup-dark .left-section { background-color: #141414; }
+.signup-dark .left-section h1 { color: #f0f0f0; }
+
+.signup-dark .sign-in-btn { border-color: #ccc; color: #ccc; }
+.signup-dark .sign-in-btn:hover { background: #2a2a2a; color: #4ade80; }
+
+.signup-dark .right-section { background-color: #1a1a1a; }
+
+.signup-dark .input-group input {
+  background-color: #2a2a2a; color: #f0f0f0; border: 1px solid #333;
+}
+.signup-dark .input-group input::placeholder { color: #888; }
+.signup-dark .input-group input:focus { box-shadow: 0 0 0 2px #4ade80; }
+.signup-dark .input-group input.valid { box-shadow: 0 0 0 2px #4ade80; }
+
+.signup-dark .toggle-password { color: #aaa; }
+
+.signup-dark .sign-up-btn { background-color: #02634d; }
+.signup-dark .sign-up-btn:hover { background-color: #038f65; }
+.signup-dark .sign-up-btn:disabled { background-color: #444; }
+
+.signup-dark .error { color: #ff6b6b; }
+
+.signup-dark .terms { color: #ccc; }
+.signup-dark .terms a { color: #4ade80; }
+.signup-dark .terms input[type="checkbox"] { accent-color: #4ade80; }
+
+.signup-dark #passwordMessage { background: #2a2a2a; color: #ccc; }
+.signup-dark .valid { color: #4ade80; }
+.signup-dark .invalid { color: #ff6b6b; }
+
+.signup-dark .otp-digit { background: #2a2a2a; color: #f0f0f0; border-color: #444; }
+.signup-dark .otp-digit:focus { border-color: #4ade80; box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2); }
+
+.signup-dark #otpForm h2 { color: #f0f0f0; }
+.signup-dark #otpForm p { color: #aaa; }
+.signup-dark #otpForm a { color: #4ade80; }

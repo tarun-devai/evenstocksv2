@@ -1617,6 +1617,338 @@
 
 .sd-mention-price { font-size: 12px; color: #888; }
 
+/* ============= TOOLTIP ============= */
+.sd-tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  cursor: help;
+}
+
+.sd-tip-icon { font-size: 12px; opacity: 0.5; transition: opacity 0.2s; }
+.sd-tip-wrap:hover .sd-tip-icon { opacity: 1; }
+
+.sd-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  width: 260px;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  animation: sd-tipIn 0.15s ease-out;
+}
+
+.sd-page.dark .sd-tip-bubble { background: #2a2a2a; color: #e0e0e0; border: 1px solid #444; }
+.sd-page.light .sd-tip-bubble { background: #1a1a1a; color: #fff; border: 1px solid #333; }
+
+@keyframes sd-tipIn { from { opacity: 0; transform: translateX(-50%) translateY(4px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* ============= EVENSTOCKS SCORE ============= */
+.sd-score-card { overflow: visible; }
+
+.sd-score-verdict { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+.sd-score-grid {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.sd-score-main { flex-shrink: 0; }
+
+.sd-score-breakdown {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: center;
+}
+
+.sd-score-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sd-score-main .sd-score-gauge svg { width: 160px; height: 160px; }
+
+.sd-gauge-bg { opacity: 0.15; }
+
+.sd-gauge-arc {
+  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sd-gauge-score { font-size: 22px; font-weight: 800; fill: currentColor; }
+.sd-gauge-max { font-size: 11px; fill: #888; }
+.sd-gauge-lbl { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.sd-page.dark .sd-gauge-score { fill: #e0e0e0; }
+.sd-page.light .sd-gauge-score { fill: #1a1a1a; }
+
+/* ============= TAB ICONS ============= */
+.sd-tab-icon { margin-right: 5px; font-size: 13px; }
+
+/* ============= RETURNS CALCULATOR ============= */
+.sd-returns-card { border-left: 4px solid #02634d; }
+.sd-page.dark .sd-returns-card { border-left-color: #4ade80; }
+
+.sd-return-periods { display: flex; gap: 4px; }
+
+.sd-period-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sd-page.dark .sd-period-btn { background: #252525; border: 1px solid #333; color: #888; }
+.sd-page.light .sd-period-btn { background: #f0f0f0; border: 1px solid #e9ecef; color: #666; }
+
+.sd-page.dark .sd-period-btn.active { background: #02634d; border-color: #02634d; color: #fff; }
+.sd-page.light .sd-period-btn.active { background: #02634d; border-color: #02634d; color: #fff; }
+
+.sd-returns-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.sd-return-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.sd-page.dark .sd-return-item { background: #1a1a1a; }
+.sd-page.light .sd-return-item { background: #f8f9fa; }
+
+.sd-return-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; }
+
+.sd-return-value { font-size: 20px; font-weight: 800; }
+.sd-page.dark .sd-return-value { color: #e0e0e0; }
+
+.sd-return-highlight { color: #4ade80 !important; }
+.sd-return-value.positive { color: #4ade80 !important; }
+.sd-return-value.negative { color: #f87171 !important; }
+
+/* ============= CAGR TABLE ============= */
+.sd-cagr-cell { font-weight: 600; color: #4ade80; }
+.sd-page.light .sd-cagr-cell { color: #15803d; }
+
+/* ============= QUARTERLY TREND ============= */
+.sd-quarterly-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.sd-quarterly-card {
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.15s;
+}
+
+.sd-quarterly-card:hover { transform: translateY(-3px); }
+
+.sd-page.dark .sd-quarterly-card { background: #1a1a1a; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-quarterly-card { background: #fafafa; border: 1px solid #e9ecef; }
+
+.sd-q-label { font-size: 14px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid; }
+.sd-page.dark .sd-q-label { color: #4ade80; border-color: #2a2a2a; }
+.sd-page.light .sd-q-label { color: #02634d; border-color: #e9ecef; }
+
+.sd-q-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+.sd-q-metric { font-weight: 500; color: #888; flex-shrink: 0; width: 75px; }
+.sd-q-val { font-weight: 600; flex: 1; }
+.sd-page.dark .sd-q-val { color: #e0e0e0; }
+
+.sd-q-change { font-size: 12px; font-weight: 600; }
+.sd-q-change.positive { color: #4ade80; }
+.sd-q-change.negative { color: #f87171; }
+
+/* ============= DEBT & SOLVENCY ============= */
+.sd-debt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sd-debt-item {
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s;
+}
+
+.sd-debt-item:hover { transform: translateY(-2px); }
+
+.sd-page.dark .sd-debt-item { background: #1a1a1a; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-debt-item { background: #fafafa; border: 1px solid #e9ecef; }
+
+.sd-debt-top { display: flex; align-items: center; gap: 8px; }
+.sd-debt-label { font-size: 13px; color: #888; font-weight: 500; }
+
+.sd-debt-value { font-size: 20px; font-weight: 800; }
+.sd-debt-item.good .sd-debt-value { color: #4ade80; }
+.sd-debt-item.neutral .sd-debt-value { color: #fbbf24; }
+.sd-debt-item.bad .sd-debt-value { color: #f87171; }
+
+/* ============= CASH FLOW HIGHLIGHTS ============= */
+.sd-cashflow-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.sd-cashflow-card {
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.sd-cashflow-card:hover { transform: translateY(-2px); }
+
+.sd-page.dark .sd-cashflow-card { background: #1a1a1a; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-cashflow-card { background: #fafafa; border: 1px solid #e9ecef; }
+
+.sd-cf-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; }
+.sd-cf-value { font-size: 18px; font-weight: 800; }
+.sd-page.dark .sd-cf-value { color: #e0e0e0; }
+
+.sd-cf-change { font-size: 12px; font-weight: 600; }
+.sd-cf-change.positive { color: #4ade80; }
+.sd-cf-change.negative { color: #f87171; }
+
+/* ============= PIVOT POINTS ============= */
+.sd-pivot-types { display: flex; gap: 4px; }
+
+.sd-pivot-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sd-pivot-item {
+  padding: 14px 10px;
+  border-radius: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s;
+}
+
+.sd-pivot-item:hover { transform: translateY(-2px); }
+
+.sd-pivot-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.sd-pivot-value { font-size: 15px; font-weight: 700; }
+.sd-page.dark .sd-pivot-value { color: #e0e0e0; }
+
+.sd-page.dark .sd-pivot-item.resistance { background: #1f0a0a; border: 1px solid #3a1a1a; }
+.sd-page.dark .sd-pivot-item.resistance .sd-pivot-label { color: #f87171; }
+
+.sd-page.dark .sd-pivot-item.support { background: #0a1f0a; border: 1px solid #1a3a1a; }
+.sd-page.dark .sd-pivot-item.support .sd-pivot-label { color: #4ade80; }
+
+.sd-page.dark .sd-pivot-item.pivot-point { background: #1a1a2a; border: 1px solid #2a2a4a; }
+.sd-page.dark .sd-pivot-item.pivot-point .sd-pivot-label { color: #818cf8; }
+
+.sd-page.light .sd-pivot-item.resistance { background: #fef2f2; border: 1px solid #fecaca; }
+.sd-page.light .sd-pivot-item.resistance .sd-pivot-label { color: #dc2626; }
+
+.sd-page.light .sd-pivot-item.support { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.sd-page.light .sd-pivot-item.support .sd-pivot-label { color: #15803d; }
+
+.sd-page.light .sd-pivot-item.pivot-point { background: #eef2ff; border: 1px solid #c7d2fe; }
+.sd-page.light .sd-pivot-item.pivot-point .sd-pivot-label { color: #4338ca; }
+
+/* ============= VOLATILITY & RISK ============= */
+.sd-volatility-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sd-vol-card {
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s;
+}
+
+.sd-vol-card:hover { transform: translateY(-2px); }
+
+.sd-page.dark .sd-vol-card { background: #1a1a1a; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-vol-card { background: #fafafa; border: 1px solid #e9ecef; }
+
+.sd-vol-label { font-size: 12px; color: #888; font-weight: 500; }
+.sd-vol-value { font-size: 20px; font-weight: 800; }
+.sd-page.dark .sd-vol-value { color: #e0e0e0; }
+.sd-page.light .sd-vol-value { color: #1a1a1a; }
+
+/* ============= PROMOTER PLEDGE ============= */
+.sd-pledge-grid {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.sd-pledge-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 24px;
+  border-radius: 10px;
+  min-width: 180px;
+}
+
+.sd-page.dark .sd-pledge-item { background: #1a1a1a; border: 1px solid #2a2a2a; }
+.sd-page.light .sd-pledge-item { background: #fafafa; border: 1px solid #e9ecef; }
+
+.sd-pledge-label { font-size: 12px; color: #888; font-weight: 500; }
+.sd-pledge-value { font-size: 20px; font-weight: 800; }
+.sd-page.dark .sd-pledge-value { color: #e0e0e0; }
+
+.sd-pledge-good { color: #4ade80 !important; }
+
+/* ============= WATCHLIST ACTIVE STATE ============= */
+.sd-watchlist-btn.active {
+  background: #02634d !important;
+  border-color: #02634d !important;
+  color: #fff !important;
+}
+
 /* ============= RESPONSIVE ============= */
 @media (max-width: 1024px) {
   .sd-metrics-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1625,6 +1957,13 @@
   .sd-technicals-grid { grid-template-columns: 1fr; }
   .sd-forecast-grid { grid-template-columns: repeat(2, 1fr); }
   .sd-info-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-quarterly-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-returns-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-debt-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-cashflow-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-volatility-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-pivot-grid { grid-template-columns: repeat(4, 1fr); }
+  .sd-score-main .sd-score-gauge svg { width: 130px; height: 130px; }
 }
 
 @media (max-width: 768px) {
@@ -1638,8 +1977,15 @@
   .sd-info-grid { grid-template-columns: 1fr; }
   .sd-tabs { gap: 0; }
   .sd-tab { padding: 10px 12px; font-size: 12px; }
+  .sd-tab-icon { display: none; }
   .sd-stock-title-row { flex-wrap: wrap; }
   .sd-stock-actions { margin-left: 0; width: 100%; justify-content: flex-start; }
+  .sd-quarterly-grid { grid-template-columns: 1fr 1fr; }
+  .sd-pivot-grid { grid-template-columns: repeat(4, 1fr); }
+  .sd-score-grid { flex-direction: column; align-items: center; }
+  .sd-returns-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-debt-grid { grid-template-columns: 1fr 1fr; }
+  .sd-cashflow-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 480px) {
@@ -1649,4 +1995,11 @@
   .sd-watchlist-btn { width: auto; }
   .sd-card { padding: 16px; }
   .sd-breadcrumb { padding: 10px 16px; }
+  .sd-quarterly-grid { grid-template-columns: 1fr; }
+  .sd-returns-grid { grid-template-columns: 1fr; }
+  .sd-pivot-grid { grid-template-columns: repeat(3, 1fr); }
+  .sd-debt-grid { grid-template-columns: 1fr; }
+  .sd-cashflow-grid { grid-template-columns: 1fr; }
+  .sd-volatility-grid { grid-template-columns: 1fr; }
+  .sd-tip-bubble { width: 200px; }
 }

@@ -114,3 +114,42 @@
   .login-page-container .input-group { max-width: 100%; }
   .login-page-container .sign-up-btn { width: 100%; }
 }
+
+/* ============= DARK THEME ============= */
+.login-page-container.login-dark { background-color: #0d0d0d; }
+
+.login-dark .container { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4); }
+
+.login-dark .left-section { background-color: #141414; }
+.login-dark .left-section h1 { color: #f0f0f0; }
+.login-dark .left-section p { color: #aaa; }
+
+.login-dark .sign-in-btn { border-color: #ccc; color: #ccc; }
+.login-dark .sign-in-btn:hover { background: #2a2a2a; color: #4ade80; }
+
+.login-dark .right-section { background-color: #1a1a1a; }
+.login-dark .right-section h2 { color: #4ade80; }
+.login-dark .right-section p { color: #aaa; }
+
+.login-dark .input-group input {
+  background-color: #2a2a2a; color: #f0f0f0; border: 1px solid #333;
+}
+.login-dark .input-group input::placeholder { color: #888; }
+.login-dark .input-group input:focus { box-shadow: 0 0 0 2px #4ade80; }
+.login-dark .input-group input.valid { box-shadow: 0 0 0 2px #4ade80; }
+
+.login-dark .toggle-password { color: #aaa; }
+
+.login-dark .forgot-password a { color: #4ade80; }
+
+.login-dark .sign-up-btn { background-color: #02634d; }
+.login-dark .sign-up-btn:disabled { background-color: #444; }
+
+.login-dark .otp-digit { background: #2a2a2a; color: #f0f0f0; border-color: #444; }
+.login-dark .otp-digit:focus { border-color: #4ade80; box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2); }
+
+.login-dark #passwordMessage { background: #2a2a2a; color: #ccc; }
+.login-dark #passwordMessage p.valid { color: #4ade80; }
+.login-dark #passwordMessage p.valid::before { color: #4ade80; }
+
+.login-dark .form-message { color: #ccc; }

@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { checkUserEmail, checkUserName, checkUserNumber, signupUser, validateOtp } from '../services/api';
 import '../styles/SignupPage.css';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isDark } = useTheme();
 
   const [view, setView] = useState('signup'); // signup | otp
   const [form, setForm] = useState({ fullName: '', age: '', signupEmail: '', mobile: '', userName: '', signupPassword: '', confirmPassword: '' });
@@ -173,7 +175,7 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="signup-page-container">
+    <div className={`signup-page-container${isDark ? ' signup-dark' : ''}`}>
       <div className="container">
         <div className="left-section">
           <div className="logo-section">
