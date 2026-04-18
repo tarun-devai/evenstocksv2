@@ -6,6 +6,21 @@ import '../styles/StockDetail.css';
 const API_BASE = 'http://localhost:8000';
 const WS_URL = 'ws://localhost:8000';
 
+const fetchStockSearch = async (query) => {
+  const q = query.trim();
+  if (!q) return [];
+  try {
+    const res = await fetch(`${API_BASE}/api/stocks/search?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map((r) => ({
+      symbol: r.stock_name,
+      name: r.stock_name.replace(/_/g, ' '),
+      price: r.current_price || '',
+    }));
+  } catch { return []; }
+};
+
 /* ─── tiny reusable: tooltip icon ─── */
 const Tip = ({ text }) => {
   const [show, setShow] = useState(false);
@@ -1423,9 +1438,14 @@ const StockDetailPage = () => {
               const lastAt = val.lastIndexOf('@');
               if (lastAt !== -1) {
                 const afterAt = val.substring(lastAt + 1);
-                if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+                if (!afterAt.includes('\n')) {
                   chatbarMentionActiveRef.current = true;
-                  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify({ action: 'search', query: afterAt }));
+                  fetchStockSearch(afterAt).then((results) => {
+                    if (chatbarMentionActiveRef.current) {
+                      setChatMentionResults(results);
+                      setShowChatMention(results.length > 0);
+                    }
+                  });
                 } else { chatbarMentionActiveRef.current = false; setShowChatMention(false); }
               } else { chatbarMentionActiveRef.current = false; setShowChatMention(false); }
             }}

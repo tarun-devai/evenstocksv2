@@ -409,8 +409,9 @@ const ChatBotPageFinal = () => {
     const lastAtIndex = value.lastIndexOf('@');
     if (lastAtIndex !== -1) {
       const afterAt = value.substring(lastAtIndex + 1);
-      // Only show mention list if @ is followed by text without space
-      if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+      // Allow spaces in query (backend converts spaces → underscores for matching)
+      // Stop only on newline
+      if (!afterAt.includes('\n')) {
         setMentionQuery(afterAt);
         fetchStockSearch(afterAt).then((results) => {
           setMentionResults(results);
