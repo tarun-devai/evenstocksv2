@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import InvestmentCommittee from '../components/InvestmentCommittee';
 import '../styles/StockDetail.css';
 
 const API_BASE = 'http://localhost:8000';
@@ -586,6 +587,9 @@ const StockDetailPage = () => {
             </div>
           </div>
         </section>
+
+        {/* ─── AI INVESTMENT COMMITTEE ─── */}
+        <InvestmentCommittee ticker={stockName} />
 
         {/* ─── EVENSTOCKS SCORE ─── */}
         <section className="sd-card sd-score-card">

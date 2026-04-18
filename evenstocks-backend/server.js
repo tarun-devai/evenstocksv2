@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const postRoutes = require('./routes/post');
 const getRoutes = require('./routes/get');
 const chatbotRoutes = require('./routes/chatbot');
+const agentsRoutes = require('./routes/agents');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +24,7 @@ app.use(cookieParser());
 app.use('/api/post', postRoutes);
 app.use('/api/get', getRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/agents', agentsRoutes);
 
 // Health check
 app.get('/', (req, res) => {
