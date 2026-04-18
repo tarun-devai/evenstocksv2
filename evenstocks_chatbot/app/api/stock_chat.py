@@ -139,6 +139,77 @@ async def stock_chat_ws(ws: WebSocket):
                 })
                 continue
 
+            # ── Compare multiple stocks ──────────────────────
+            if action == "compare":
+                stock_names = data.get("stock_names", [])
+                user_text = data.get("content", "").strip()
+                if not stock_names or len(stock_names) < 2:
+                    continue
+
+                contexts = []
+                for sn in stock_names:
+                    ctx = build_stock_context(db_conn, sn.strip())
+                    if ctx:
+                        contexts.append(f"=== {sn.upper()} ===\n{ctx}")
+
+                if not contexts:
+                    await ws.send_json({
+                        "type": "error",
+                        "message": f"No data found for the requested stocks",
+                    })
+                    continue
+
+                combined = "\n\n".join(contexts)
+                user_msg = (
+                    f"Compare the following stocks and provide a detailed comparative analysis. "
+                    f"User's request: {user_text}\n\n{combined}"
+                )
+                session.clear()
+                session.add("user", user_msg)
+                session.cancel_event.clear()
+
+                await ws.send_json({"type": "stream_start"})
+                full_response = ""
+                input_tokens = output_tokens = 0
+
+                try:
+                    with client.messages.stream(
+                        model=MODEL,
+                        max_tokens=MAX_TOKENS,
+                        system=STOCK_SYSTEM_PROMPT,
+                        messages=session.messages,
+                    ) as stream:
+                        for event in stream:
+                            if session.cancel_event.is_set():
+                                full_response += "\n\n*(generation stopped)*"
+                                stream.close()
+                                break
+                            if hasattr(event, "type") and event.type == "content_block_delta":
+                                chunk = event.delta.text
+                                full_response += chunk
+                                await ws.send_json({
+                                    "type": "stream_delta",
+                                    "content": chunk,
+                                })
+                        final = stream.get_final_message()
+                        input_tokens = final.usage.input_tokens
+                        output_tokens = final.usage.output_tokens
+                except anthropic.APIError as e:
+                    full_response = f"API Error: {e.message}"
+                    await ws.send_json({"type": "stream_delta", "content": full_response})
+
+                if full_response:
+                    session.add("assistant", full_response)
+
+                await ws.send_json({
+                    "type": "stream_end",
+                    "usage": {
+                        "input_tokens": input_tokens,
+                        "output_tokens": output_tokens,
+                    },
+                })
+                continue
+
             # ── Follow-up question about current stock ───────
             if action == "message":
                 user_text = data.get("content", "").strip()

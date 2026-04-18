@@ -629,13 +629,15 @@
 
 .input-final {
   flex: 1;
-  padding: 12px 12px;
+  padding: 10px 12px;
   background: none;
   border: none;
   outline: none;
   font-size: 14px;
+  line-height: 1.5;
   font-family: inherit;
   resize: none;
+  min-height: 44px;
   max-height: 120px;
   color: #1a1a1a;
 }
@@ -958,46 +960,164 @@
   }
 }
 
+/* ============= MOBILE HAMBURGER BUTTON ============= */
+.mobile-hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.chatbot-page-final.dark-theme .mobile-hamburger-btn {
+  color: #ccc;
+}
+
+/* ============= MOBILE SIDEBAR BACKDROP ============= */
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .chatbot-page-final {
     grid-template-columns: 1fr;
   }
 
+  /* Sidebar: hidden off-screen by default, slides in as overlay */
   .sidebar-final {
     position: fixed;
     left: 0;
     top: 0;
     height: 100vh;
-    width: 70px;
-    z-index: 1000;
+    width: 280px;
+    z-index: 2000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
   }
 
+  .sidebar-final.mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Override desktop open/closed — on mobile, only mobile-open matters */
+  .sidebar-final.open,
+  .sidebar-final.closed {
+    width: 280px;
+  }
+
+  /* Always show labels inside mobile sidebar */
+  .sidebar-final.closed .sidebar-label-final,
+  .sidebar-final.closed .sidebar-brand-text {
+    display: inline;
+  }
+
+  /* Backdrop overlay */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Main content takes full width */
   .chatbot-main-final {
-    margin-left: 70px;
+    margin-left: 0;
   }
 
+  /* Show hamburger button */
+  .mobile-hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide desktop sidebar toggle on mobile */
+  .sidebar-toggle-final {
+    display: none;
+  }
+
+  /* Topbar adjustments */
   .topbar-left {
     max-width: 150px;
+    flex: 1;
   }
 
   .topbar-nav-final {
     display: none;
   }
 
+  .search-trigger-final {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .search-hint {
+    display: none;
+  }
+
+  /* Welcome screen */
   .welcome-title-final {
-    font-size: 32px;
+    font-size: 28px;
+  }
+
+  .welcome-subtitle {
+    font-size: 13px;
+  }
+
+  /* Quick actions: hide emoji icons, text only */
+  .quick-action-btn .action-icon {
+    display: none;
   }
 
   .quick-action-btn {
-    font-size: 11px;
-    padding: 6px 12px;
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  .quick-actions-final {
+    gap: 8px;
+  }
+
+  /* Input area */
+  .input-section-top {
+    max-width: 100%;
+  }
+
+  .input-group-final {
+    padding: 6px 8px;
+  }
+
+  .input-final {
+    font-size: 14px;
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+
+  /* User button */
+  .user-btn-final {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
   .topbar-final {
-    padding: 12px;
-    gap: 12px;
+    padding: 10px 12px;
+    gap: 8px;
   }
 
   .welcome-section-final {
@@ -1005,12 +1125,17 @@
   }
 
   .welcome-title-final {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .welcome-subtitle {
+    font-size: 12px;
+    padding: 0 8px;
   }
 
   .input-section-top {
     max-width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .chat-messages-final {
@@ -1018,11 +1143,31 @@
   }
 
   .input-section-bottom {
-    padding: 12px;
+    padding: 10px 12px;
   }
 
   .message-bubble-final {
-    max-width: 85%;
+    max-width: 90%;
+  }
+
+  .quick-action-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  /* Topbar search trigger smaller */
+  .search-trigger-final {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .search-trigger-text {
+    font-size: 12px;
+  }
+
+  /* Mobile sidebar close button */
+  .mobile-sidebar-close {
+    font-size: 20px;
   }
 }
 
@@ -1889,14 +2034,113 @@
   justify-content: center;
 }
 
+/* ============= MOBILE TOP NAV STRIP (hidden on desktop) ============= */
+.mobile-nav-strip {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-nav-strip {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-bottom: 1px solid #e9ecef;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  .mobile-nav-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-nav-item {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #e0e0e0;
+    background: #f5f5f5;
+    color: #555;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .mobile-nav-item:hover {
+    border-color: #02634d;
+    color: #02634d;
+  }
+
+  .mobile-nav-item.active {
+    background: #02634d;
+    border-color: #02634d;
+    color: #fff;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-nav-strip {
+    background: #1a1a1a;
+    border-bottom-color: #2a2a2a;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-nav-item {
+    background: #252525;
+    border-color: #333;
+    color: #aaa;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-nav-item:hover {
+    border-color: #667eea;
+    color: #667eea;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-nav-item.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: #fff;
+  }
+}
+
 /* ============= MOBILE SIDEBAR HEADER ============= */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .sidebar-header-final {
-    justify-content: center;
-    flex-wrap: wrap;
+    justify-content: space-between;
     gap: 8px;
   }
-  .sidebar-brand-text {
-    font-size: 18px;
+
+  /* Show a close button inside mobile sidebar */
+  .mobile-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: #6c757d;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+
+  .mobile-sidebar-close:hover {
+    background: #f0f0f0;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-sidebar-close {
+    color: #aaa;
+  }
+
+  .chatbot-page-final.dark-theme .mobile-sidebar-close:hover {
+    background: #252525;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-sidebar-close {
+    display: none;
   }
 }

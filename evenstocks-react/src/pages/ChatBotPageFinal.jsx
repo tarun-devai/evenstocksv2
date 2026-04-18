@@ -4,6 +4,11 @@ import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/chatbot-final.css';
 
+const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL
+  || (window.location.hostname === 'localhost'
+    ? 'ws://localhost:8000'
+    : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`);
+
 const ChatBotPageFinal = () => {
   const { isLoggedIn, user, logout } = useAuth();
   const { isDark: isDarkTheme, toggleTheme } = useTheme();
@@ -18,6 +23,7 @@ const ChatBotPageFinal = () => {
   const [toast, setToast] = useState('');
   const [toolkitOpen, setToolkitOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showMentionList, setShowMentionList] = useState(false);
@@ -44,7 +50,7 @@ const ChatBotPageFinal = () => {
   // WebSocket connection to Python AI backend
   useEffect(() => {
     const connectWs = () => {
-      const ws = new WebSocket('ws://localhost:8000/ws/stock-chat');
+      const ws = new WebSocket(`${WS_URL}/ws/stock-chat`);
 
       ws.onopen = () => {
         console.log('Connected to EvenStocks AI');
@@ -64,9 +70,11 @@ const ChatBotPageFinal = () => {
               elapsed += 100;
               setThinkingTime((elapsed / 1000).toFixed(2));
             }, 100);
-            const mentionMatch = msg.match(/@([A-Za-z_][A-Za-z0-9_]*)/);
-            if (mentionMatch) {
-              ws.send(JSON.stringify({ action: 'analyze', stock_name: mentionMatch[1] }));
+            const mentions = [...msg.matchAll(/@([A-Za-z_][A-Za-z0-9_]*)/g)];
+            if (mentions.length > 1) {
+              ws.send(JSON.stringify({ action: 'compare', stock_names: mentions.map(m => m[1]), content: msg }));
+            } else if (mentions.length === 1) {
+              ws.send(JSON.stringify({ action: 'analyze', stock_name: mentions[0][1] }));
             } else {
               ws.send(JSON.stringify({ action: 'message', content: msg }));
             }
@@ -218,6 +226,7 @@ const ChatBotPageFinal = () => {
     setThinking(false);
     clearInterval(thinkingTimerRef.current);
     setHistoryMenuId(null);
+    setMobileSidebarOpen(false);
     // Clear backend session and start fresh
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'clear' }));
@@ -519,10 +528,16 @@ const ChatBotPageFinal = () => {
       return;
     }
 
-    // Detect @STOCK mentions → use analyze action for stock-specific queries
-    const mentionMatch = userMsg.match(/@([A-Za-z_][A-Za-z0-9_]*)/);
-    if (mentionMatch) {
-      const stockName = mentionMatch[1];
+    // Detect @STOCK mentions → analyze action for single, compare for multiple
+    const mentionMatches = [...userMsg.matchAll(/@([A-Za-z_][A-Za-z0-9_]*)/g)];
+    if (mentionMatches.length > 1) {
+      // Multiple stocks → send as compare action with all stock names
+      const stockNames = mentionMatches.map((m) => m[1]);
+      wsRef.current.send(
+        JSON.stringify({ action: 'compare', stock_names: stockNames, content: userMsg })
+      );
+    } else if (mentionMatches.length === 1) {
+      const stockName = mentionMatches[0][1];
       wsRef.current.send(
         JSON.stringify({ action: 'analyze', stock_name: stockName })
       );
@@ -538,6 +553,8 @@ const ChatBotPageFinal = () => {
     setInput(`Tell me about ${label}`);
     textareaRef.current?.focus();
   };
+
+  const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
   const handleNewChat = () => {
     // Save current chat before starting new one
@@ -648,8 +665,14 @@ const ChatBotPageFinal = () => {
 
   return (
     <div className={`chatbot-page-final ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
+      {/* Mobile Backdrop */}
+      <div
+        className={`sidebar-backdrop${mobileSidebarOpen ? ' visible' : ''}`}
+        onClick={closeMobileSidebar}
+      />
+
       {/* Sidebar */}
-      <aside className={`sidebar-final ${sidebarOpen ? 'open' : 'closed'}`}>
+      <aside className={`sidebar-final ${sidebarOpen ? 'open' : 'closed'}${mobileSidebarOpen ? ' mobile-open' : ''}`}>
         <div className="sidebar-header-final">
           <div className="sidebar-logo-wrap">
             <img src="/assets/img/logo-icon.png" alt="ES" className="sidebar-logo-final" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
@@ -659,6 +682,9 @@ const ChatBotPageFinal = () => {
           <button className="sidebar-toggle-final" onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
+          <button className="mobile-sidebar-close" onClick={closeMobileSidebar}>
+            ✕
+          </button>
         </div>
 
         <nav className="sidebar-nav-final">
@@ -667,7 +693,7 @@ const ChatBotPageFinal = () => {
               key={item.id}
               className="sidebar-item-final"
               onClick={() => {
-                if (item.id === 'chat') handleNewChat();
+                if (item.id === 'chat') { handleNewChat(); closeMobileSidebar(); }
                 if (item.id === 'search') {
                   if (sidebarOpen) setChatSearchQuery(prev => prev === null ? '' : null);
                   else setSidebarOpen(true);
@@ -682,6 +708,7 @@ const ChatBotPageFinal = () => {
                 }
                 if (item.id === 'trending') {
                   handleToolkitAction('sectors');
+                  closeMobileSidebar();
                 }
                 if (item.id === 'share') {
                   showToast('Shared chats coming soon');
@@ -773,7 +800,7 @@ const ChatBotPageFinal = () => {
         )}
 
         <div className="sidebar-footer-final">
-          <button className="settings-btn-final" title="Settings" onClick={() => navigate('/profile')}>
+          <button className="settings-btn-final" title="Settings" onClick={() => { navigate('/profile'); closeMobileSidebar(); }}>
             {'\u2699\uFE0F'} {sidebarOpen && <span>Settings</span>}
           </button>
         </div>
@@ -784,6 +811,9 @@ const ChatBotPageFinal = () => {
         {/* Top Navigation */}
         <div className="topbar-final">
           <div className="topbar-content">
+            <button className="mobile-hamburger-btn" onClick={() => setMobileSidebarOpen(true)}>
+              ☰
+            </button>
             <div className="topbar-left">
               <div className="search-trigger-final" onClick={() => setSearchModalOpen(true)}>
                 <span className="search-trigger-icon">🔍</span>
@@ -926,6 +956,15 @@ const ChatBotPageFinal = () => {
           </div>
         </div>
 
+        {/* Mobile Navigation Strip */}
+        <div className="mobile-nav-strip">
+          <button className="mobile-nav-item active">Ask EvenStocks</button>
+          <button className="mobile-nav-item" onClick={() => navigate('/dashboard')}>Dashboard</button>
+          <button className="mobile-nav-item" onClick={() => navigate('/portfolio')}>Portfolio</button>
+          <button className="mobile-nav-item" onClick={() => navigate('/discovery')}>Discovery</button>
+          <button className="mobile-nav-item" onClick={() => navigate('/pricing')}>Pricing</button>
+        </div>
+
         {/* Chat Area */}
         <div className="chat-container-final">
           {messages.length === 0 ? (
@@ -977,7 +1016,7 @@ const ChatBotPageFinal = () => {
                         <div className="mention-symbol">{stock.symbol}</div>
                         <div className="mention-details">
                           <div className="mention-name">{stock.name}</div>
-                          <div className="mention-price">₹{stock.price}</div>
+                          <div className="mention-price">{String(stock.price).startsWith('₹') ? stock.price : `₹${stock.price}`}</div>
                         </div>
                       </button>
                     ))}
@@ -1092,7 +1131,7 @@ const ChatBotPageFinal = () => {
                         <div className="mention-symbol">{stock.symbol}</div>
                         <div className="mention-details">
                           <div className="mention-name">{stock.name}</div>
-                          <div className="mention-price">₹{stock.price}</div>
+                          <div className="mention-price">{String(stock.price).startsWith('₹') ? stock.price : `₹${stock.price}`}</div>
                         </div>
                       </button>
                     ))}

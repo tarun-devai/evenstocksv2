@@ -3,7 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import '../styles/StockDetail.css';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_BACKEND_URL
+  || (window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : '');
+
+const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL
+  || (window.location.hostname === 'localhost'
+    ? 'ws://localhost:8000'
+    : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`);
 
 /* ─── tiny reusable: tooltip icon ─── */
 const Tip = ({ text }) => {
@@ -82,7 +90,7 @@ const StockDetailPage = () => {
   // ─── WebSocket for search ───
   useEffect(() => {
     const connectWs = () => {
-      const ws = new WebSocket('ws://localhost:8000/ws/stock-chat');
+      const ws = new WebSocket(`${WS_URL}/ws/stock-chat`);
       ws.onopen = () => { wsRef.current = ws; };
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);

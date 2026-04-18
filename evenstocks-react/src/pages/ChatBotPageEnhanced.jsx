@@ -83,6 +83,12 @@ const ChatBotPageEnhanced = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   const handleScroll = useCallback(() => {
     if (msgBoxRef.current) {
       const { scrollHeight, scrollTop, clientHeight } = msgBoxRef.current;
@@ -182,11 +188,20 @@ const ChatBotPageEnhanced = () => {
           <button className="settings-btn">⚙️ Settings</button>
         </div>
       </aside>
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
 
       {/* Main Content */}
       <main className="chatbot-main">
         {/* Top Bar */}
         <div className="chatbot-topbar">
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
+
           <div className="topbar-left">
             <input
               type="text"

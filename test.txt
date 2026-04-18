@@ -25,3 +25,6 @@ docker-compose down
 
 # Stop and remove containers + networks
 docker-compose down --volumes  # Also removes data volumes
+
+C:\Users\Tarun\bin\ngrok.exe http 3000
+docker-compose up --build
