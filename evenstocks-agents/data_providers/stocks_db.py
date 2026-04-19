@@ -11,7 +11,8 @@ DB_PATH = os.getenv("STOCKS_DB_PATH", "/app/data/stocks.db")
 def get_conn() -> Optional[sqlite3.Connection]:
     if not os.path.exists(DB_PATH):
         return None
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    uri = f"file:{DB_PATH}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
