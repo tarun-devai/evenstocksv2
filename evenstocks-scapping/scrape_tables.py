@@ -27,6 +27,7 @@ import sqlite3
 import logging
 import argparse
 import traceback
+from datetime import datetime, timedelta, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -41,7 +42,11 @@ LOGIN_PASSWORD  = "Tiwari2000@20"
 MIN_DELAY       = 1.5
 MAX_DELAY       = 3.0
 REQUEST_TIMEOUT = 30
-SKIP_IF_PRESENT = True
+
+# Auto-refresh policy: skip a stock only if its row is younger than this threshold.
+# Rows older than STALE_AFTER_DAYS get re-scraped automatically.
+# Overridable via --stale-days or --force on the CLI.
+STALE_AFTER_DAYS = 2
 
 TABLE_SECTIONS = [
     "quarters", "profit-loss", "balance-sheet",
@@ -92,7 +97,8 @@ def init_db(db_path: str) -> sqlite3.Connection:
             roe          TEXT,
             face_value   TEXT,
             pros         TEXT,
-            cons         TEXT
+            cons         TEXT,
+            last_updated TEXT
         )
     """)
     conn.execute("""
@@ -103,15 +109,38 @@ def init_db(db_path: str) -> sqlite3.Connection:
             PRIMARY KEY (stock_name, table_type)
         )
     """)
+    # Backfill: older DBs created before the freshness feature won't have last_updated.
+    existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(company_info)").fetchall()}
+    if "last_updated" not in existing_cols:
+        conn.execute("ALTER TABLE company_info ADD COLUMN last_updated TEXT")
     conn.commit()
     return conn
 
 
-def stock_exists(conn: sqlite3.Connection, stock_name: str) -> bool:
+def get_last_updated(conn: sqlite3.Connection, stock_name: str) -> datetime | None:
+    """Return the last_updated datetime for a stock, or None if row is missing / unset."""
     row = conn.execute(
-        "SELECT 1 FROM company_info WHERE stock_name = ?", (stock_name,)
+        "SELECT last_updated FROM company_info WHERE stock_name = ?", (stock_name,)
     ).fetchone()
-    return row is not None
+    if not row or not row[0]:
+        return None
+    try:
+        # Stored as ISO-8601 UTC
+        return datetime.fromisoformat(row[0])
+    except ValueError:
+        return None
+
+
+def is_fresh(conn: sqlite3.Connection, stock_name: str, stale_after_days: float) -> bool:
+    """True if the stock row exists AND its last_updated is within stale_after_days."""
+    ts = get_last_updated(conn, stock_name)
+    if ts is None:
+        return False
+    # Treat naive timestamps as UTC (older rows may have been written naive)
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    age = datetime.now(timezone.utc) - ts
+    return age < timedelta(days=stale_after_days)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -230,11 +259,13 @@ def extract_tables(soup: BeautifulSoup) -> dict:
 # ═══════════════════════════════════════════════════════════════
 def save_to_db(conn: sqlite3.Connection, stock_name: str, url: str,
                info: dict, tables: dict):
+    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
     conn.execute("""
         INSERT OR REPLACE INTO company_info
         (stock_name, url, about, market_cap, current_price, high_low,
-         stock_pe, book_value, dividend_yield, roce, roe, face_value, pros, cons)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         stock_pe, book_value, dividend_yield, roce, roe, face_value,
+         pros, cons, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         stock_name, url,
         info.get("about", ""),
@@ -249,6 +280,7 @@ def save_to_db(conn: sqlite3.Connection, stock_name: str, url: str,
         info.get("face_value", ""),
         json.dumps(info.get("pros", []), ensure_ascii=False),
         json.dumps(info.get("cons", []), ensure_ascii=False),
+        now_iso,
     ))
 
     for table_type, data in tables.items():
@@ -264,11 +296,13 @@ def save_to_db(conn: sqlite3.Connection, stock_name: str, url: str,
 # Per-company pipeline
 # ═══════════════════════════════════════════════════════════════
 def process_company(session: requests.Session, conn: sqlite3.Connection,
-                    name: str, url: str) -> bool:
+                    name: str, url: str, stale_after_days: float, force: bool) -> bool:
     stock_name = clean_name(name)
 
-    if SKIP_IF_PRESENT and stock_exists(conn, stock_name):
-        log.info(f"  [skip] {stock_name}")
+    if not force and is_fresh(conn, stock_name, stale_after_days):
+        ts = get_last_updated(conn, stock_name)
+        age_hrs = (datetime.now(timezone.utc) - (ts.replace(tzinfo=timezone.utc) if ts and ts.tzinfo is None else ts)).total_seconds() / 3600 if ts else 0
+        log.info(f"  [skip] {stock_name} (updated {age_hrs:.1f}h ago)")
         return True
 
     log.info(f"  Processing: {stock_name}")
@@ -299,6 +333,15 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape stock tables → SQLite")
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--end", type=int, default=None)
+    parser.add_argument(
+        "--stale-days", type=float, default=STALE_AFTER_DAYS,
+        help=f"Re-scrape rows older than this many days (default: {STALE_AFTER_DAYS}). "
+             "Fresh rows are skipped automatically.",
+    )
+    parser.add_argument(
+        "--force", action="store_true",
+        help="Ignore freshness and re-scrape every stock.",
+    )
     args = parser.parse_args()
 
     stocks = []
@@ -310,7 +353,8 @@ def main():
     start = max(0, args.start)
 
     log.info("=" * 60)
-    log.info(f"Table Scraper  |  {len(stocks)} total  |  [{start}:{end}]")
+    mode = "force re-scrape" if args.force else f"skip if < {args.stale_days}d old"
+    log.info(f"Table Scraper  |  {len(stocks)} total  |  [{start}:{end}]  |  {mode}")
     log.info("=" * 60)
 
     conn = init_db(DB_PATH)
@@ -321,7 +365,7 @@ def main():
     for i in range(start, end):
         name, url = stocks[i]["name"], stocks[i]["url"]
         try:
-            if process_company(session, conn, name, url):
+            if process_company(session, conn, name, url, args.stale_days, args.force):
                 ok += 1
             else:
                 fail += 1

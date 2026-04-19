@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import StockTicker from '../components/StockTicker';
 import '../styles/chatbot-final.css';
 
 const WS_URL = 'ws://localhost:8000';
@@ -20,7 +21,7 @@ const ChatBotPageFinal = () => {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [toast, setToast] = useState('');
   const [toolkitOpen, setToolkitOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -967,6 +968,7 @@ const ChatBotPageFinal = () => {
 
         {/* Chat Area */}
         <div className="chat-container-final">
+          {messages.length === 0 && <StockTicker />}
           {messages.length === 0 ? (
             <div className="welcome-section-final">
               <h1 className="welcome-title-final">

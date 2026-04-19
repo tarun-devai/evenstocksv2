@@ -1,0 +1,203 @@
+/* ─── Stock ticker strip (NSE-style) ─────────────────────────
+   Sits just below the topbar on the home page. Pause button on the right. */
+
+.stock-ticker {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  margin: 0 0 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+/* Dark theme */
+.chatbot-page-final.dark-theme .stock-ticker {
+  background: #141a18;
+  border-color: #24302b;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+}
+/* Light theme */
+.chatbot-page-final.light-theme .stock-ticker {
+  background: #ffffff;
+  border-color: #e4e8e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ─── LIVE label (left cap) ─── */
+.stock-ticker-label {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #fff;
+  background: linear-gradient(135deg, #02634d 0%, #014a38 100%);
+  text-transform: uppercase;
+  position: relative;
+  z-index: 2;
+}
+.stock-ticker-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  animation: ticker-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ticker-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
+/* ─── Marquee track ─── */
+.stock-ticker-track {
+  flex: 1 1 auto;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+/* Soft fade at the right edge */
+.stock-ticker-track::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 36px;
+  pointer-events: none;
+}
+.chatbot-page-final.dark-theme .stock-ticker-track::after {
+  background: linear-gradient(90deg, transparent, #141a18);
+}
+.chatbot-page-final.light-theme .stock-ticker-track::after {
+  background: linear-gradient(90deg, transparent, #ffffff);
+}
+
+.stock-ticker-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: stock-ticker-slide 55s linear infinite;
+  will-change: transform;
+}
+.stock-ticker.is-paused .stock-ticker-marquee,
+.stock-ticker:hover .stock-ticker-marquee {
+  animation-play-state: paused;
+}
+@keyframes stock-ticker-slide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ─── Individual stock pill ─── */
+.stock-ticker-item {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.chatbot-page-final.dark-theme .stock-ticker-item {
+  border-right: 1px solid #24302b;
+  color: #e4e6e4;
+}
+.chatbot-page-final.light-theme .stock-ticker-item {
+  border-right: 1px solid #eef1ef;
+  color: #111827;
+}
+.chatbot-page-final.dark-theme .stock-ticker-item:hover { background: rgba(2, 99, 77, 0.18); }
+.chatbot-page-final.light-theme .stock-ticker-item:hover { background: rgba(2, 99, 77, 0.08); }
+
+.stock-ticker-name {
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+}
+.stock-ticker-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.chatbot-page-final.dark-theme .stock-ticker-price { color: #f3f4f6; }
+.chatbot-page-final.light-theme .stock-ticker-price { color: #0f172a; }
+
+.stock-ticker-change {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+.stock-ticker-item.up .stock-ticker-change {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+}
+.stock-ticker-item.down .stock-ticker-change {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.12);
+}
+.stock-ticker-item:not(.up):not(.down) .stock-ticker-change {
+  color: #6b7280;
+  background: rgba(107, 114, 128, 0.15);
+}
+.chatbot-page-final.dark-theme .stock-ticker-item.up .stock-ticker-change {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.14);
+}
+.chatbot-page-final.dark-theme .stock-ticker-item.down .stock-ticker-change {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.14);
+}
+
+/* ─── Pause / resume button (right cap) ─── */
+.stock-ticker-pause {
+  flex: 0 0 auto;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  z-index: 2;
+}
+.chatbot-page-final.dark-theme .stock-ticker-pause {
+  background: #1a2220;
+  color: #9ca3af;
+  border-left: 1px solid #24302b;
+}
+.chatbot-page-final.light-theme .stock-ticker-pause {
+  background: #f7faf9;
+  color: #4b5563;
+  border-left: 1px solid #eef1ef;
+}
+.chatbot-page-final.dark-theme .stock-ticker-pause:hover { background: #22302c; color: #4ade80; }
+.chatbot-page-final.light-theme .stock-ticker-pause:hover { background: #e7f2ee; color: #02634d; }
+
+.stock-ticker.is-paused .stock-ticker-pause {
+  color: #02634d;
+}
+.chatbot-page-final.dark-theme .stock-ticker.is-paused .stock-ticker-pause { color: #4ade80; }
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .stock-ticker-label { padding: 0 10px; font-size: 10px; gap: 6px; }
+  .stock-ticker-item { padding: 9px 12px; gap: 7px; font-size: 12px; }
+  .stock-ticker-change { font-size: 11px; padding: 2px 6px; }
+  .stock-ticker-pause { width: 36px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stock-ticker-marquee { animation: none; }
+  .stock-ticker-live-dot { animation: none; }
+}

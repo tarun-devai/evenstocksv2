@@ -4,7 +4,6 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     wget \
     libnss3 \
-    libgconf-2-4 \
     libxss1 \
     libxtst6 \
     libxrandr2 \
@@ -13,8 +12,9 @@ RUN apt-get update && apt-get install -y \
     libatk1.0-0 \
     libcairo-gobject2 \
     libgtk-3-0 \
-    libgdk-pixbuf2.0-0 \
-    chromium-browser \
+    libgdk-pixbuf-2.0-0 \
+    chromium \
+    chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -28,8 +28,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set environment variables for Chrome
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/bin/chromium-browser
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_PATH=/usr/bin/chromium
 
 # Default command (can be overridden in compose)
 CMD ["python", "get_all_stocks_list.py"]

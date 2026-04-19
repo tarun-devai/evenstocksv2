@@ -300,7 +300,7 @@ const VerdictTab = ({ verdict }) => {
     return <p className="ic-empty">Verdict unavailable.</p>;
   }
   if (verdict.raw) {
-    return <pre className="ic-analyst-report">{verdict.raw}</pre>;
+    return <div className="ic-analyst-report"><MarkdownText>{verdict.raw}</MarkdownText></div>;
   }
 
   return (
@@ -380,7 +380,7 @@ const DebateTab = ({ debate }) => {
                 <div className="ic-debate-head">
                   <i className="bi bi-arrow-up-right-circle"></i> Bull
                 </div>
-                <div className="ic-debate-body">{bullRounds[i]}</div>
+                <div className="ic-debate-body"><MarkdownText>{bullRounds[i]}</MarkdownText></div>
               </div>
             )}
             {bearRounds[i] && (
@@ -388,7 +388,7 @@ const DebateTab = ({ debate }) => {
                 <div className="ic-debate-head">
                   <i className="bi bi-arrow-down-right-circle"></i> Bear
                 </div>
-                <div className="ic-debate-body">{bearRounds[i]}</div>
+                <div className="ic-debate-body"><MarkdownText>{bearRounds[i]}</MarkdownText></div>
               </div>
             )}
           </div>
@@ -398,7 +398,7 @@ const DebateTab = ({ debate }) => {
       {research && (
         <div className="ic-research-view">
           <h4><i className="bi bi-person-badge"></i> Research Manager's synthesis</h4>
-          <pre className="ic-analyst-report">{research}</pre>
+          <div className="ic-analyst-report"><MarkdownText>{research}</MarkdownText></div>
         </div>
       )}
     </div>
@@ -426,12 +426,16 @@ const RiskTab = ({ views, final, activeRiskTab, onRiskTabChange }) => {
         ))}
       </div>
       <div className="ic-risk-body">
-        <pre className="ic-analyst-report">{views[activeRiskTab] || 'No view available.'}</pre>
+        <div className="ic-analyst-report">
+          {views[activeRiskTab]
+            ? <MarkdownText>{views[activeRiskTab]}</MarkdownText>
+            : <p className="md-p ic-empty">No view available.</p>}
+        </div>
       </div>
       {final && (
         <div className="ic-risk-final">
           <h4><i className="bi bi-person-badge-fill"></i> CRO's final rating</h4>
-          <pre className="ic-analyst-report">{final}</pre>
+          <div className="ic-analyst-report"><MarkdownText>{final}</MarkdownText></div>
         </div>
       )}
     </div>
@@ -452,7 +456,7 @@ const AnalystsTab = ({ reports }) => {
               <span>{meta.label}</span>
               <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'}`}></i>
             </button>
-            {isOpen && <pre className="ic-analyst-report">{report}</pre>}
+            {isOpen && <div className="ic-analyst-report"><MarkdownText>{report}</MarkdownText></div>}
           </div>
         );
       })}
@@ -470,5 +474,91 @@ function formatPrice(p) {
   if (typeof p === 'number') return p.toLocaleString('en-IN', { maximumFractionDigits: 2 });
   return p;
 }
+
+/* ─── Lightweight markdown renderer ───
+   Handles: #/##/### headings, **bold**, *italic*, `code`, - / * bullets,
+   1. 2. 3. numbered lists, blank-line paragraphs. No third-party dep. */
+function renderInline(text, keyPrefix = '') {
+  const parts = [];
+  let remaining = text;
+  let idx = 0;
+  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/;
+  while (remaining.length) {
+    const m = remaining.match(pattern);
+    if (!m) { parts.push(remaining); break; }
+    if (m.index > 0) parts.push(remaining.slice(0, m.index));
+    if (m[2] !== undefined) parts.push(<strong key={`${keyPrefix}-b-${idx++}`}>{m[2]}</strong>);
+    else if (m[3] !== undefined) parts.push(<em key={`${keyPrefix}-i-${idx++}`}>{m[3]}</em>);
+    else if (m[4] !== undefined) parts.push(<code key={`${keyPrefix}-c-${idx++}`}>{m[4]}</code>);
+    remaining = remaining.slice(m.index + m[0].length);
+  }
+  return parts;
+}
+
+const MarkdownText = ({ children }) => {
+  const text = typeof children === 'string' ? children : String(children ?? '');
+  if (!text.trim()) return null;
+
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) { i++; continue; }
+
+    // Headings
+    const h = trimmed.match(/^(#{1,6})\s+(.*)$/);
+    if (h) {
+      const level = Math.min(h[1].length + 2, 6); // ## -> h4, ### -> h5, #### -> h6
+      const Tag = `h${level}`;
+      blocks.push(<Tag key={`h-${i}`} className="md-h">{renderInline(h[2], `h-${i}`)}</Tag>);
+      i++;
+      continue;
+    }
+
+    // Unordered list block
+    if (/^[-*]\s+/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*]\s+/, ''));
+        i++;
+      }
+      blocks.push(
+        <ul key={`ul-${i}`} className="md-ul">
+          {items.map((it, j) => <li key={j}>{renderInline(it, `ul-${i}-${j}`)}</li>)}
+        </ul>
+      );
+      continue;
+    }
+
+    // Ordered list block
+    if (/^\d+\.\s+/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      blocks.push(
+        <ol key={`ol-${i}`} className="md-ol">
+          {items.map((it, j) => <li key={j}>{renderInline(it, `ol-${i}-${j}`)}</li>)}
+        </ol>
+      );
+      continue;
+    }
+
+    // Paragraph (consume consecutive non-blank, non-special lines)
+    const paraLines = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|[-*]\s|\d+\.\s)/.test(lines[i].trim())) {
+      paraLines.push(lines[i].trim());
+      i++;
+    }
+    blocks.push(
+      <p key={`p-${i}`} className="md-p">{renderInline(paraLines.join(' '), `p-${i}`)}</p>
+    );
+  }
+  return <div className="md-body">{blocks}</div>;
+};
 
 export default InvestmentCommittee;

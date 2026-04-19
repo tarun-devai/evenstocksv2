@@ -139,9 +139,9 @@ const CompareTab = ({ ticker }) => {
   return (
     <div>
       <div className="ik-form-row">
-        <input className="ik-input" placeholder="Ticker A" value={a} onChange={(e) => setA(e.target.value.toUpperCase())} />
+        <StockAutocomplete value={a} onChange={setA} placeholder="Ticker A (e.g. Tata_Motors)" />
         <span className="ik-vs">vs</span>
-        <input className="ik-input" placeholder="Ticker B" value={b} onChange={(e) => setB(e.target.value.toUpperCase())} />
+        <StockAutocomplete value={b} onChange={setB} placeholder="Ticker B (e.g. Reliance_Industries)" />
         <button className="ik-btn" onClick={run} disabled={loading}>
           {loading ? <><i className="bi bi-arrow-repeat ik-spin"></i> Running…</> : <><i className="bi bi-play-circle"></i> Compare</>}
         </button>

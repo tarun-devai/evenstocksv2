@@ -45,6 +45,48 @@
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
+
+/* ─── Stock autocomplete ─── */
+.ik-autocomplete {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+.ik-autocomplete .ik-input { width: 100%; }
+.ik-suggest {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 125, 125, 0.3);
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.sd-page.dark .ik-suggest { background: #1a1a1a; border-color: #333; }
+.sd-page.light .ik-suggest { background: #ffffff; border-color: #e5e7eb; }
+
+.ik-suggest li {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.sd-page.dark .ik-suggest li:hover,
+.sd-page.dark .ik-suggest li.active { background: #262626; }
+.sd-page.light .ik-suggest li:hover,
+.sd-page.light .ik-suggest li.active { background: #f3f4f6; }
+
+.ik-suggest-name { font-weight: 600; }
+.ik-suggest-price { font-size: 12px; opacity: 0.7; font-variant-numeric: tabular-nums; }
 .ik-input {
   padding: 8px 12px;
   border-radius: 8px;
