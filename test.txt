@@ -28,3 +28,27 @@ docker-compose down --volumes  # Also removes data volumes
 
 C:\Users\Tarun\bin\ngrok.exe http 3000
 docker-compose up --build
+
+
+Do this now, in order:
+
+
+cd evenstocks-trading
+
+# 1. Build the mapping (required after every backfill)
+python build_mapping.py --verbose
+# Expect: [map] built stock_master: ~2500 rows  stock_alias: ~10000 aliases
+
+# 2. Verify lookups work
+python query.py find "tata motors"
+python query.py find "force motors"
+python query.py find "reliance industries"
+
+# 3. Restart the containers so caches and new code pick up
+docker compose restart evenstocks-api evenstocks-chatbot
+
+# 4. Hard-refresh the browser (Ctrl+Shift+R) — the new chart cache needs fresh JS
+
+# 5. Sanity-check the chatbot can reach Flask
+docker exec -it evenstocksv2-evenstocks-chatbot-1 python -c "import urllib.request, json; print(json.loads(urllib.request.urlopen('http://evenstocks-api:5809/api/stock/search?q=tata+motors&limit=3', timeout=10).read()))"
+# Should print 3 results with nse_symbol populated

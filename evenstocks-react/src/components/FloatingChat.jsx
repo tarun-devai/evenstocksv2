@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/FloatingChat.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5809';
-const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL || 'ws://localhost:8000';
+const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL || 'ws://localhost:8001';
 
 /* ── helpers ── */
 function esc(s) {

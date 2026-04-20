@@ -3,10 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import StockTicker from '../components/StockTicker';
+import InlineStockChart from '../components/InlineStockChart';
 import '../styles/chatbot-final.css';
 
-const WS_URL = 'ws://localhost:8000';
-const API_BASE = 'http://localhost:8000';
+const WS_URL = 'ws://localhost:8001';
+const API_BASE = 'http://localhost:8001';
 
 const ChatBotPageFinal = () => {
   const { isLoggedIn, user, logout } = useAuth();
@@ -38,6 +39,7 @@ const ChatBotPageFinal = () => {
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const pendingMessageRef = useRef(null);
   const isCancelledRef = useRef(false); // true after cancel — gates stream events, NOT search
+  const pendingChartsRef = useRef([]); // charts received mid-stream, attached to bot msg at stream_end
 
   const msgBoxRef = useRef(null);
   const thinkingTimerRef = useRef(null);
@@ -106,6 +108,7 @@ const ChatBotPageFinal = () => {
           if (isCancelledRef.current) return; // leftover from cancelled stream
           setStreamingContent('');
           setThinking(true);
+          pendingChartsRef.current = [];
         }
 
         if (data.type === 'stream_delta') {
@@ -113,14 +116,21 @@ const ChatBotPageFinal = () => {
           setStreamingContent((prev) => prev + data.content);
         }
 
+        if (data.type === 'charts') {
+          if (isCancelledRef.current) return;
+          pendingChartsRef.current = data.charts || [];
+        }
+
         if (data.type === 'stream_end') {
           if (isCancelledRef.current) return; // leftover from cancelled stream
           clearInterval(thinkingTimerRef.current);
           setThinking(false);
+          const attachedCharts = pendingChartsRef.current;
+          pendingChartsRef.current = [];
           setStreamingContent((prev) => {
             if (prev) {
               setMessages((msgs) => {
-                const updated = [...msgs, { type: 'bot', content: prev }];
+                const updated = [...msgs, { type: 'bot', content: prev, charts: attachedCharts }];
                 // Save to chat history after bot responds
                 setTimeout(() => saveCurrentChat(updated), 100);
                 return updated;
@@ -522,7 +532,7 @@ const ChatBotPageFinal = () => {
         ...prev,
         {
           type: 'bot',
-          content: 'Not connected to AI backend. Please make sure the Python server is running on localhost:8000.',
+          content: 'Not connected to AI backend. Please make sure the Python server is running on localhost:8001.',
         },
       ]);
       return;
@@ -1054,6 +1064,9 @@ const ChatBotPageFinal = () => {
                       <div className="bot-message-final">
                         <div className="message-bubble-final bot-formatted">
                           {renderFormattedContent(msg.content)}
+                          {msg.charts && msg.charts.length > 0 && (
+                            <InlineStockChart charts={msg.charts} isDark={isDarkTheme} />
+                          )}
                         </div>
                       </div>
                     )}

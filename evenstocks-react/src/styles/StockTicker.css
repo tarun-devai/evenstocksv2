@@ -77,9 +77,10 @@
 }
 
 .stock-ticker-marquee {
-  display: inline-flex;
+  display: flex;
+  width: max-content;
   white-space: nowrap;
-  animation: stock-ticker-slide 55s linear infinite;
+  animation: stock-ticker-slide 40s linear infinite;
   will-change: transform;
 }
 .stock-ticker.is-paused .stock-ticker-marquee,
@@ -208,6 +209,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stock-ticker-marquee { animation: none; }
+  /* Keep the ticker moving but at a crawl — this is primarily informational content. */
+  .stock-ticker-marquee { animation-duration: 120s; }
   .stock-ticker-live-dot { animation: none; }
 }

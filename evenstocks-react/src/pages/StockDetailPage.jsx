@@ -3,10 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import InvestmentCommittee from '../components/InvestmentCommittee';
 import InvestmentToolkit from '../components/InvestmentToolkit';
+import StockPriceChart from '../components/StockPriceChart';
 import '../styles/StockDetail.css';
 
-const API_BASE = 'http://localhost:8000';
-const WS_URL = 'ws://localhost:8000';
+const API_BASE = 'http://localhost:8001';
+const WS_URL = 'ws://localhost:8001';
 
 const fetchStockSearch = async (query) => {
   const q = query.trim();
@@ -666,22 +667,9 @@ const StockDetailPage = () => {
           </div>
         </section>
 
-        {/* ─── PRICE CHART ─── */}
+        {/* ─── PRICE CHART (NSE EOD + intraday from evenstocks-trading) ─── */}
         <section className="sd-card">
-          <div className="sd-section-header">
-            <h3 className="sd-section-title">Price Chart</h3>
-            <div className="sd-chart-timeframes">
-              {['1D', '1W', '1M', '3M', '6M', '1Y', '3Y', '5Y', 'MAX'].map((tf) => (
-                <button key={tf} className="sd-timeframe-btn">{tf}</button>
-              ))}
-            </div>
-          </div>
-          <div className="sd-chart-placeholder">
-            <div className="sd-chart-placeholder-inner">
-              <i className="bi bi-graph-up"></i>
-              <p>Price chart will be displayed here</p>
-            </div>
-          </div>
+          <StockPriceChart nseSymbol={stockName} isDark={isDarkTheme} />
         </section>
 
         {/* ═════ TABS NAVIGATION ═════ */}
