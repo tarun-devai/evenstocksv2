@@ -1297,6 +1297,220 @@ def all_signedup_users():
     }), 200
 
 # -------------------------------------------------------------------
+# TRADING DATA — wraps evenstocks-trading/query.py
+# -------------------------------------------------------------------
+import sys as _sys
+
+# Try multiple paths so this works both in Docker (/evenstocks-trading mount)
+# and local dev (../evenstocks-trading relative to this file).
+_TRADING_CANDIDATES = [
+    '/evenstocks-trading',
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'evenstocks-trading')),
+]
+_TRADING_PATH = next((p for p in _TRADING_CANDIDATES if os.path.isdir(p)), None)
+if _TRADING_PATH and _TRADING_PATH not in _sys.path:
+    _sys.path.insert(0, _TRADING_PATH)
+
+_trading_ready = False
+_trading_error = None
+if _TRADING_PATH is None:
+    _trading_error = f"evenstocks-trading folder not found in any of: {_TRADING_CANDIDATES}"
+    print(f"[trading] {_trading_error}")
+else:
+    try:
+        from query import (
+            find_stock as _find_stock,
+            get_eod as _get_eod,
+            get_intraday as _get_intraday,
+            resolve as _resolve,
+        )
+        _trading_ready = True
+        print(f"[trading] query module loaded from {_TRADING_PATH}")
+    except Exception as _e:
+        _trading_error = f"{type(_e).__name__}: {_e}"
+        print(f"[trading] query module not importable: {_trading_error}")
+
+
+def _trading_unavailable():
+    return jsonify({
+        'status': 0,
+        'message': 'trading module not available',
+        'error': _trading_error,
+        'path': _TRADING_PATH,
+        'hint': 'Ensure evenstocks-trading/data/trading.db exists. Run: '
+                'cd evenstocks-trading && pip install -r requirements.txt && python storage.py',
+    }), 503
+
+
+@app.route('/api/stock/health', methods=['GET'])
+def api_stock_health():
+    """Diagnose the trading module — call this if /api/stock/* returns 503."""
+    info = {
+        'trading_ready': _trading_ready,
+        'trading_path': _TRADING_PATH,
+        'error': _trading_error,
+    }
+    if _trading_ready:
+        try:
+            from storage import stats as _stats
+            info['db_stats'] = _stats()
+        except Exception as e:
+            info['db_error'] = str(e)
+    return jsonify(info), 200
+
+
+@app.route('/api/stock/search', methods=['GET'])
+def api_stock_search():
+    """Fuzzy-find stocks by name / NSE symbol / BSE scrip code.
+
+    Query: /api/stock/search?q=tata+motors&limit=10
+    """
+    if not _trading_ready:
+        return _trading_unavailable()
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({'status': 0, 'message': 'q is required', 'results': []}), 400
+    try:
+        limit = min(int(request.args.get('limit', 10)), 50)
+    except ValueError:
+        limit = 10
+    try:
+        results = _find_stock(q, limit=limit)
+        return jsonify({'status': 1, 'query': q, 'results': results}), 200
+    except Exception as e:
+        return jsonify({'status': 0, 'message': str(e)}), 500
+
+
+from functools import lru_cache as _lru_cache
+
+
+@_lru_cache(maxsize=2048)
+def _resolve_cached(raw_symbol):
+    """LRU-cached NSE symbol resolver.  The mapping rarely changes so caching
+    is safe — clear the cache with ``_resolve_cached.cache_clear()`` if a
+    rebuild happens while Flask is running."""
+    if not _resolve:
+        return None
+    try:
+        return _resolve(raw_symbol)
+    except Exception:
+        return None
+
+
+def _resolve_symbol(raw_symbol):
+    """Resolve any user-typed symbol/slug to a real NSE symbol via the
+    stock_master mapping table.  Cached — repeat lookups are O(1).
+
+    Accepts: 'TATAMOTORS', 'Tata_Motors', 'tata motors', 'TCS', 'HDFCBANK',
+             '500325' (even BSE scrip resolves to the matching NSE symbol
+             when the same company is listed on both exchanges).
+
+    Returns (resolved_symbol, debug_note).
+    """
+    if not raw_symbol:
+        return None, 'empty'
+    direct = raw_symbol.upper()
+    hit = _resolve_cached(raw_symbol)
+    if hit and hit.get('nse_symbol'):
+        ns = hit['nse_symbol']
+        note = '' if ns == direct else f'resolved "{raw_symbol}" → {ns}'
+        return ns, note
+    return direct, f'no mapping for "{raw_symbol}" — run build_mapping.py'
+
+
+@app.route('/api/stock/cache-clear', methods=['POST'])
+def api_stock_cache_clear():
+    """Clear the resolver LRU cache (call after running build_mapping.py)."""
+    _resolve_cached.cache_clear()
+    return jsonify({'status': 1, 'message': 'resolver cache cleared'}), 200
+
+
+@app.route('/api/stock/eod', methods=['GET'])
+def api_stock_eod():
+    """Daily OHLCV history for a stock.
+
+    Accepts Screener-style slugs too — 'Tata_Motors' is auto-resolved to 'TATAMOTORS'.
+
+    Query: /api/stock/eod?symbol=TATAMOTORS&days=90
+           /api/stock/eod?symbol=Tata_Motors&days=30
+           /api/stock/eod?scrip=500570&days=30
+    """
+    if not _trading_ready:
+        return _trading_unavailable()
+    symbol = request.args.get('symbol')
+    scrip = request.args.get('scrip')
+    if not symbol and not scrip:
+        return jsonify({'status': 0, 'message': 'symbol or scrip required'}), 400
+    try:
+        days = int(request.args.get('days', 90))
+    except ValueError:
+        days = 90
+
+    resolved_symbol = None
+    resolve_note = ''
+    try:
+        if symbol:
+            resolved_symbol, resolve_note = _resolve_symbol(symbol)
+        rows = _get_eod(
+            nse_symbol=resolved_symbol,
+            bse_scrip=scrip if scrip else None,
+            days=days,
+        )
+        return jsonify({
+            'status': 1,
+            'symbol': symbol, 'resolved_symbol': resolved_symbol, 'resolve_note': resolve_note,
+            'scrip': scrip,
+            'days': days, 'count': len(rows),
+            'data': rows,
+        }), 200
+    except Exception as e:
+        return jsonify({'status': 0, 'message': str(e)}), 500
+
+
+@app.route('/api/stock/intraday', methods=['GET'])
+def api_stock_intraday():
+    """Minute-level LTP series for a stock on one date (default: today).
+
+    Query: /api/stock/intraday?symbol=TATAMOTORS
+           /api/stock/intraday?symbol=Tata_Motors&date=2026-04-20
+    """
+    if not _trading_ready:
+        return _trading_unavailable()
+    symbol = request.args.get('symbol')
+    scrip = request.args.get('scrip')
+    if not symbol and not scrip:
+        return jsonify({'status': 0, 'message': 'symbol or scrip required'}), 400
+    date_str = request.args.get('date')
+    d = None
+    if date_str:
+        try:
+            from datetime import date as _date
+            d = _date.fromisoformat(date_str)
+        except ValueError:
+            return jsonify({'status': 0, 'message': 'date must be YYYY-MM-DD'}), 400
+
+    resolved_symbol = None
+    resolve_note = ''
+    try:
+        if symbol:
+            resolved_symbol, resolve_note = _resolve_symbol(symbol)
+        rows = _get_intraday(
+            nse_symbol=resolved_symbol,
+            bse_scrip=scrip if scrip else None,
+            d=d,
+        )
+        return jsonify({
+            'status': 1,
+            'symbol': symbol, 'resolved_symbol': resolved_symbol, 'resolve_note': resolve_note,
+            'scrip': scrip,
+            'date': date_str, 'count': len(rows),
+            'data': rows,
+        }), 200
+    except Exception as e:
+        return jsonify({'status': 0, 'message': str(e)}), 500
+
+
+# -------------------------------------------------------------------
 # MAIN
 # -------------------------------------------------------------------
 if __name__ == '__main__':

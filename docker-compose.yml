@@ -29,6 +29,9 @@ services:
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
     volumes:
       - ./evenstocks-api:/app
+      # Mount the trading module so the Flask API can import query.py / storage.py
+      # and read data/trading.db.  Without this, /api/stock/* returns 503.
+      - ./evenstocks-trading:/evenstocks-trading
 
   evenstocks-backend:
     build:
@@ -44,6 +47,7 @@ services:
       AGENTS_API_BASE: http://evenstocks-agents:5810
     volumes:
       - ./evenstocks-backend:/app
+      - /app/node_modules
 
   evenstocks-agents:
     build:
@@ -66,7 +70,7 @@ services:
     depends_on:
       - mysql
     ports:
-      - '8000:8000'
+      - '8001:8000'
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       HOST: 0.0.0.0
@@ -102,7 +106,7 @@ services:
       CHOKIDAR_USEPOLLING: 'true'
       GENERATE_SOURCEMAP: 'false'
       REACT_APP_API_URL: http://localhost:5000/api
-      REACT_APP_CHATBOT_WS_URL: ws://localhost:8000
+      REACT_APP_CHATBOT_WS_URL: ws://localhost:8001
     stdin_open: true
     tty: true
     depends_on:

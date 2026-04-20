@@ -44,7 +44,9 @@
       "Bash(ls .env)",
       "Bash(python -c \"import os; print\\('env key present:', bool\\(os.getenv\\('ANTHROPIC_API_KEY'\\)\\)\\)\")",
       "Bash(npx --no-install eslint src/components/InvestmentCommittee.jsx)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(mkdir -p /c/tarun/research/nse-eval)",
+      "Read(//c/tarun/research/**)"
     ]
   }
 }

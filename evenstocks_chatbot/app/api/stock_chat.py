@@ -10,27 +10,80 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.config import MODEL, MAX_TOKENS
 from app.session import ChatSession
-from app.stock_db import get_conn, search_stocks, build_stock_context
+from app.stock_db import (
+    get_conn, search_stocks, build_stock_context,
+    resolve_nse_symbol, get_eod_rows,
+)
 
 router = APIRouter()
 
 client = anthropic.Anthropic()
 
-STOCK_SYSTEM_PROMPT = """You are an expert Indian stock market analyst. You analyze stocks listed on BSE/NSE.
 
-When given stock data (company info, financial tables, documents), provide a thorough analytical report covering:
+def _build_charts_payload(stock_names: list[str]) -> list[dict]:
+    """For each Screener stock name, return chart-ready data for the frontend.
 
-1. **Company Overview** — What the company does, sector, market position
-2. **Key Metrics Analysis** — Interpret PE, ROCE, ROE, dividend yield, book value
-3. **Financial Performance** — Revenue trends, profit growth, margins from quarterly/annual data
-4. **Balance Sheet Health** — Debt levels, cash flow, leverage ratios
-5. **Shareholding Pattern** — Promoter holding changes, FII/DII interest
-6. **Strengths & Risks** — Based on pros/cons and financial data
-7. **Overall Assessment** — Bull case vs bear case, suitability for different investor types
+    Shape: [{screener_name, nse_symbol, eod: [...], count}]
+    Rows we don't have (no NSE match, no EOD data) are skipped but logged so
+    you can diagnose why a chart didn't render.
+    """
+    out = []
+    for sn in stock_names:
+        if not sn:
+            continue
+        nse = resolve_nse_symbol(sn)
+        if not nse:
+            print(f"[charts] no NSE symbol for '{sn}' — check /api/stock/search on evenstocks-api")
+            continue
+        rows = get_eod_rows(nse, days=90)
+        if not rows:
+            print(f"[charts] no EOD data for {nse} — backfill may not be populated yet")
+            continue
+        out.append({
+            "screener_name": sn,
+            "nse_symbol": nse,
+            "eod": [
+                {"date": r.get("date"), "close": r.get("close"),
+                 "open": r.get("open"), "high": r.get("high"), "low": r.get("low"),
+                 "volume": r.get("volume")}
+                for r in rows
+            ],
+            "count": len(rows),
+        })
+    print(f"[charts] built {len(out)}/{len([s for s in stock_names if s])} charts")
+    return out
 
-Use the actual numbers from the data provided. Be specific, not generic.
-Format your response with clear markdown headers and bullet points.
-If data is missing for any section, mention what's unavailable rather than guessing."""
+STOCK_SYSTEM_PROMPT = """You are an expert Indian stock market analyst covering BSE/NSE-listed equities.
+
+You will receive two kinds of data:
+  1. FUNDAMENTAL data from Screener — company info, financial tables, PDFs, shareholding.
+  2. TECHNICAL data under a '## Trading Data (NSE)' block — last-close, SMA/RSI,
+     volume, 90-day OHLC history, 5-day and 30-day price moves.
+
+Produce a thorough investment report with these sections (skip any where data is truly missing):
+
+1. **Company Overview** — business, sector, market position
+2. **Key Metrics** — PE, PB, ROCE, ROE, dividend yield, book value, market cap
+3. **Financial Performance** — revenue/profit trends, margins, from quarterly/annual tables
+4. **Balance Sheet Health** — debt, cash flow, leverage
+5. **Shareholding Pattern** — promoter/FII/DII changes
+6. **Technical Analysis** — use the NSE trading data:
+   - Trend: price vs SMA20 / SMA50 / SMA200 (above = bullish, below = bearish)
+   - Momentum: RSI(14) — >70 overbought, <30 oversold, 50 neutral
+   - Range position: where is the price within the 90-day high/low band?
+   - Short vs long-term moves: 5-day and 30-day % change
+   - Support/resistance: derive from recent lows/highs in the OHLC table
+   - Volume: is the recent volume above or below the 90-day average?
+   - Candlestick pattern hints from recent 3-5 days OHLC (e.g. long upper wicks, gaps)
+7. **Strengths & Risks** — merge fundamental + technical
+8. **Overall Assessment** — bull case vs bear case, conviction, who should buy/avoid, timeframe
+
+Guidelines:
+- Use actual numbers from the provided data. Be specific, not generic.
+- When doing comparisons between stocks, use a table for technical + fundamental side-by-side.
+- Format with clear markdown headers and bullet points.
+- If technical data says "no EOD data yet in trading DB", explicitly flag that you can't do technical analysis yet and skip section 6.
+- Never hallucinate prices or indicators — use only what's provided."""
 
 
 @router.websocket("/ws/stock-chat")
@@ -130,6 +183,11 @@ async def stock_chat_ws(ws: WebSocket):
                 if full_response:
                     session.add("assistant", full_response)
 
+                # Send chart data for the analyzed stock — frontend renders below response.
+                charts = _build_charts_payload([stock_name])
+                if charts:
+                    await ws.send_json({"type": "charts", "charts": charts})
+
                 await ws.send_json({
                     "type": "stream_end",
                     "usage": {
@@ -200,6 +258,11 @@ async def stock_chat_ws(ws: WebSocket):
 
                 if full_response:
                     session.add("assistant", full_response)
+
+                # Send chart data for every stock being compared.
+                charts = _build_charts_payload(stock_names)
+                if charts:
+                    await ws.send_json({"type": "charts", "charts": charts})
 
                 await ws.send_json({
                     "type": "stream_end",

@@ -10,7 +10,7 @@
  */
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
-const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL || 'ws://localhost:8000';
+const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL || 'ws://localhost:8001';
 
 /**
  * Send a query to the Iris chatbot and get analysis

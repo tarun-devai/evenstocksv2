@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import '../styles/InvestmentToolkit.css';
 
 const BACKEND_API = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const CHATBOT_API = 'http://localhost:8000';
+const CHATBOT_API = 'http://localhost:8001';
 
 const StockAutocomplete = ({ value, onChange, placeholder }) => {
   const [results, setResults] = useState([]);

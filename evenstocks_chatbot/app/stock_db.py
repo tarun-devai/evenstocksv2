@@ -6,7 +6,18 @@ import os
 import json
 import sqlite3
 
+try:
+    import urllib.request as _urlreq
+    import urllib.parse as _urlparse
+    _HTTP_OK = True
+except ImportError:
+    _HTTP_OK = False
+
 DB_PATH = os.path.join("data", "stocks.db")
+
+# evenstocks-api runs at :5809 on the host; inside docker-compose the service
+# name is "evenstocks-api".  Override via env if needed.
+TRADING_API_BASE = os.environ.get("TRADING_API_BASE", "http://evenstocks-api:5809")
 
 
 def get_conn() -> sqlite3.Connection | None:
@@ -139,4 +150,130 @@ def build_stock_context(conn: sqlite3.Connection, stock_name: str) -> str | None
         parts.append(f"\n## Document: {doc_type} — {title}")
         parts.append(text)
 
+    # Trading data (NSE EOD last 30 days + today's intraday summary)
+    trading_ctx = _fetch_trading_context(stock_name)
+    if trading_ctx:
+        parts.append("\n## Trading Data (NSE)")
+        parts.append(trading_ctx)
+
     return "\n".join(parts)
+
+
+def _http_get_json(path: str, params: dict) -> dict | None:
+    if not _HTTP_OK:
+        print(f"[trading-api] urllib not available, skipping {path}")
+        return None
+    qs = _urlparse.urlencode({k: v for k, v in params.items() if v is not None})
+    url = f"{TRADING_API_BASE}{path}?{qs}"
+    try:
+        with _urlreq.urlopen(url, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        # Log so "trading data not provided" in LLM output can be traced to an
+        # actual network failure rather than silent emptiness.
+        print(f"[trading-api] {path} failed: {type(e).__name__}: {e}")
+        return None
+
+
+def resolve_nse_symbol(stock_name: str) -> str | None:
+    """Screener-style 'Tata_Motors' → NSE symbol 'TATAMOTORS' via trading API."""
+    pretty = stock_name.replace("_", " ").strip()
+    hits = _http_get_json("/api/stock/search", {"q": pretty, "limit": 3}) or {}
+    for r in hits.get("results") or []:
+        if r.get("nse_symbol"):
+            return r["nse_symbol"]
+    return None
+
+
+def get_eod_rows(nse_symbol: str, days: int = 90) -> list[dict]:
+    """Fetch EOD rows from trading API. Returns [] if unavailable."""
+    resp = _http_get_json("/api/stock/eod", {"symbol": nse_symbol, "days": days}) or {}
+    return resp.get("data") or []
+
+
+def _sma(values: list[float], window: int) -> float | None:
+    vs = [v for v in values if isinstance(v, (int, float))]
+    if len(vs) < window:
+        return None
+    return sum(vs[-window:]) / window
+
+
+def _rsi(closes: list[float], period: int = 14) -> float | None:
+    closes = [c for c in closes if isinstance(c, (int, float))]
+    if len(closes) < period + 1:
+        return None
+    gains, losses = [], []
+    for i in range(1, period + 1):
+        delta = closes[-i] - closes[-i - 1]
+        (gains if delta > 0 else losses).append(abs(delta))
+    avg_g = sum(gains) / period if gains else 0
+    avg_l = sum(losses) / period if losses else 0
+    if avg_l == 0:
+        return 100.0
+    rs = avg_g / avg_l
+    return round(100 - (100 / (1 + rs)), 2)
+
+
+def compute_indicators(rows: list[dict]) -> dict:
+    """Compute simple technical indicators from EOD rows (ordered ascending by date)."""
+    closes = [r.get("close") for r in rows if r.get("close") is not None]
+    highs = [r.get("high") for r in rows if r.get("high") is not None]
+    lows = [r.get("low") for r in rows if r.get("low") is not None]
+    vols = [r.get("volume") or 0 for r in rows]
+
+    if not closes:
+        return {}
+
+    last = closes[-1]
+    return {
+        "last_close": round(last, 2),
+        "sma_20": round(_sma(closes, 20), 2) if _sma(closes, 20) else None,
+        "sma_50": round(_sma(closes, 50), 2) if _sma(closes, 50) else None,
+        "sma_200": round(_sma(closes, 200), 2) if _sma(closes, 200) else None,
+        "rsi_14": _rsi(closes, 14),
+        "period_high": round(max(highs), 2) if highs else None,
+        "period_low": round(min(lows), 2) if lows else None,
+        "pct_from_high": round((last / max(highs) - 1) * 100, 2) if highs else None,
+        "pct_from_low": round((last / min(lows) - 1) * 100, 2) if lows else None,
+        "avg_volume": int(sum(vols) / len(vols)) if vols else None,
+        "last_volume": int(vols[-1]) if vols else None,
+        "trend_5d": round(((last / closes[-6]) - 1) * 100, 2) if len(closes) >= 6 else None,
+        "trend_30d": round(((last / closes[-31]) - 1) * 100, 2) if len(closes) >= 31 else None,
+    }
+
+
+def _fetch_trading_context(stock_name: str) -> str | None:
+    """Build technical context block for the LLM: price history + indicators."""
+    nse_symbol = resolve_nse_symbol(stock_name)
+    if not nse_symbol:
+        return None
+
+    rows = get_eod_rows(nse_symbol, days=90)
+    if not rows:
+        return f"Resolved to NSE:{nse_symbol} — no EOD data yet in trading DB."
+
+    ind = compute_indicators(rows)
+
+    def _fmt(v, suffix=""):
+        if v is None: return "N/A"
+        if isinstance(v, (int, float)): return f"{v:,.2f}{suffix}"
+        return str(v)
+
+    lines = [
+        f"- NSE symbol: {nse_symbol}",
+        f"- Last close: ₹{_fmt(ind.get('last_close'))}",
+        f"- 5-day move: {_fmt(ind.get('trend_5d'), '%')}   30-day move: {_fmt(ind.get('trend_30d'), '%')}",
+        f"- 90-day range: ₹{_fmt(ind.get('period_low'))} – ₹{_fmt(ind.get('period_high'))}  "
+        f"(now {_fmt(ind.get('pct_from_high'), '%')} from high, {_fmt(ind.get('pct_from_low'), '%')} from low)",
+        f"- Moving averages: SMA20={_fmt(ind.get('sma_20'))}  SMA50={_fmt(ind.get('sma_50'))}  SMA200={_fmt(ind.get('sma_200'))}",
+        f"- RSI(14): {_fmt(ind.get('rsi_14'))}  (>70 overbought, <30 oversold)",
+        f"- Volume: last={ind.get('last_volume') or 0:,}  avg-90d={ind.get('avg_volume') or 0:,}",
+    ]
+
+    lines.append("\nRecent daily OHLC (most recent last):")
+    for r in rows[-10:]:
+        lines.append(
+            f"  {r.get('date')}  O:{_fmt(r.get('open'))}  H:{_fmt(r.get('high'))}  "
+            f"L:{_fmt(r.get('low'))}  C:{_fmt(r.get('close'))}  V:{r.get('volume') or 0:,}"
+        )
+    return "\n".join(lines)

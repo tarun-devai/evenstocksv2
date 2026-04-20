@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/chatbot.css';
 
-const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL || 'ws://localhost:8000';
+const WS_URL = process.env.REACT_APP_CHATBOT_WS_URL || 'ws://localhost:8001';
 
 function esc(s) {
   const d = document.createElement('div');
