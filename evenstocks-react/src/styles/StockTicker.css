@@ -191,10 +191,20 @@
 
 /* ─── Responsive ─── */
 @media (max-width: 640px) {
-  .stock-ticker-label { padding: 0 10px; font-size: 10px; gap: 6px; }
-  .stock-ticker-item { padding: 9px 12px; gap: 7px; font-size: 12px; }
-  .stock-ticker-change { font-size: 11px; padding: 2px 6px; }
-  .stock-ticker-pause { width: 36px; font-size: 14px; }
+  .stock-ticker-label {
+    padding: 0 8px;
+    font-size: 9px;
+    gap: 5px;
+    letter-spacing: 0.8px;
+  }
+  .stock-ticker-live-dot { width: 6px; height: 6px; }
+  .stock-ticker-item { padding: 8px 10px; gap: 6px; font-size: 11.5px; }
+  .stock-ticker-name { font-size: 11.5px; }
+  .stock-ticker-price { font-size: 11.5px; }
+  .stock-ticker-change { font-size: 10.5px; padding: 2px 5px; }
+  .stock-ticker-pause { width: 32px; font-size: 13px; }
+  /* Shorten the right-edge fade so more text peeks through */
+  .stock-ticker-track::after { width: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

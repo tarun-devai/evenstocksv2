@@ -674,7 +674,7 @@ const ChatBotPageFinal = () => {
             <img src="/assets/img/logo-icon.png" alt="ES" className="sidebar-logo-final" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
             <div className="sidebar-logo-fallback" style={{display:'none'}}>ES</div>
           </div>
-          {sidebarOpen && <span className="sidebar-brand-text">EvenStocks</span>}
+          {(sidebarOpen || mobileSidebarOpen) && <span className="sidebar-brand-text">EvenStocks</span>}
           <button className="sidebar-toggle-final" onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
@@ -713,13 +713,13 @@ const ChatBotPageFinal = () => {
               title={item.label}
             >
               <span className="sidebar-icon-final">{item.icon}</span>
-              {sidebarOpen && <span className="sidebar-label-final">{item.label}</span>}
+              {(sidebarOpen || mobileSidebarOpen) && <span className="sidebar-label-final">{item.label}</span>}
             </button>
           ))}
         </nav>
 
         {/* Chat search filter */}
-        {sidebarOpen && chatSearchQuery !== null && (
+        {(sidebarOpen || mobileSidebarOpen) && chatSearchQuery !== null && (
           <div className="chat-search-filter">
             <input
               type="text"
@@ -733,7 +733,7 @@ const ChatBotPageFinal = () => {
         )}
 
         {/* Chat History Section */}
-        {sidebarOpen && (
+        {(sidebarOpen || mobileSidebarOpen) && (
           <div className="chat-history-section">
             <button className="chat-history-toggle" onClick={() => setHistoryOpen(!historyOpen)}>
               <span className="chat-history-title">Chat History</span>

@@ -22160,16 +22160,16 @@
       "file_type": "rationale",
       "source_file": "evenstocks_chatbot\\app\\stock_db.py",
       "source_location": "L22",
-      "id": "stock_db_rationale_22",
-      "community": 30
+      "community": 30,
+      "id": "stock_db_rationale_22"
     },
     {
       "label": "Build a full text context block for Claude from all stock data.",
       "file_type": "rationale",
       "source_file": "evenstocks_chatbot\\app\\stock_db.py",
       "source_location": "L88",
-      "id": "stock_db_rationale_88",
-      "community": 30
+      "community": 30,
+      "id": "stock_db_rationale_88"
     },
     {
       "label": "__init__.py",

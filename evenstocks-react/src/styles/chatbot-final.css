@@ -1097,13 +1097,23 @@
   }
 
   .input-group-final {
-    padding: 6px 8px;
+    padding: 10px 10px;
+    align-items: center;
+    border-radius: 14px;
   }
 
   .input-final {
     font-size: 14px;
-    min-height: 42px;
-    padding: 8px 10px;
+    line-height: 1.45;
+    min-height: 56px;
+    max-height: 140px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-actions {
+    align-self: center;
   }
 
   /* User button */
@@ -1121,21 +1131,25 @@
   }
 
   .welcome-section-final {
-    padding: 20px 12px;
+    padding: 24px 14px;
+    justify-content: center;
+    gap: 14px;
   }
 
   .welcome-title-final {
     font-size: 22px;
+    margin: 0;
   }
 
   .welcome-subtitle {
     font-size: 12px;
     padding: 0 8px;
+    margin: 0 0 8px 0;
   }
 
   .input-section-top {
     max-width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
 
   .chat-messages-final {
